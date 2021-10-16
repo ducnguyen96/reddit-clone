@@ -1,0 +1,4 @@
+extend type Mutation {
+    register(input: UserRegisterInput!): RegisterResult!
+    login(input: UserLoginInput!): TokenPayloadDto!
+}

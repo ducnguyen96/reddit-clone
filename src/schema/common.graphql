@@ -1,0 +1,4 @@
+type CustomError {
+    message: String!
+    path: String!
+}

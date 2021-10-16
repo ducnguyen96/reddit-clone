@@ -1,0 +1,19 @@
+type TokenPayloadDto {
+    expiresIn: Int
+    accessToken: String
+}
+
+union RegisterResult = RegisterPayload | RegisterBadRequest | RegisterInternalServerError
+
+type RegisterPayload {
+    user: User!
+    token: TokenPayloadDto!
+}
+
+type RegisterInternalServerError {
+    error: CustomError!
+}
+
+type RegisterBadRequest {
+    errors: [CustomError!]!
+}
