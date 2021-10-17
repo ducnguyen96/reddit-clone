@@ -22,6 +22,55 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
+	// Email holds the value of the "email" field.
+	Email *string `json:"email,omitempty"`
+	// AvatarURL holds the value of the "avatar_url" field.
+	AvatarURL *string `json:"avatar_url,omitempty"`
+	// Password holds the value of the "password" field.
+	Password string `json:"password,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges UserEdges `json:"edges"`
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Communities holds the value of the communities edge.
+	Communities []*Community `json:"communities,omitempty"`
+	// Posts holds the value of the posts edge.
+	Posts []*Post `json:"posts,omitempty"`
+	// Comments holds the value of the comments edge.
+	Comments []*Comment `json:"comments,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [3]bool
+}
+
+// CommunitiesOrErr returns the Communities value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) CommunitiesOrErr() ([]*Community, error) {
+	if e.loadedTypes[0] {
+		return e.Communities, nil
+	}
+	return nil, &NotLoadedError{edge: "communities"}
+}
+
+// PostsOrErr returns the Posts value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PostsOrErr() ([]*Post, error) {
+	if e.loadedTypes[1] {
+		return e.Posts, nil
+	}
+	return nil, &NotLoadedError{edge: "posts"}
+}
+
+// CommentsOrErr returns the Comments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) CommentsOrErr() ([]*Comment, error) {
+	if e.loadedTypes[2] {
+		return e.Comments, nil
+	}
+	return nil, &NotLoadedError{edge: "comments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -31,7 +80,7 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldUsername:
+		case user.FieldUsername, user.FieldEmail, user.FieldAvatarURL, user.FieldPassword:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -74,9 +123,44 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				u.Username = value.String
 			}
+		case user.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				u.Email = new(string)
+				*u.Email = value.String
+			}
+		case user.FieldAvatarURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field avatar_url", values[i])
+			} else if value.Valid {
+				u.AvatarURL = new(string)
+				*u.AvatarURL = value.String
+			}
+		case user.FieldPassword:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password", values[i])
+			} else if value.Valid {
+				u.Password = value.String
+			}
 		}
 	}
 	return nil
+}
+
+// QueryCommunities queries the "communities" edge of the User entity.
+func (u *User) QueryCommunities() *CommunityQuery {
+	return (&UserClient{config: u.config}).QueryCommunities(u)
+}
+
+// QueryPosts queries the "posts" edge of the User entity.
+func (u *User) QueryPosts() *PostQuery {
+	return (&UserClient{config: u.config}).QueryPosts(u)
+}
+
+// QueryComments queries the "comments" edge of the User entity.
+func (u *User) QueryComments() *CommentQuery {
+	return (&UserClient{config: u.config}).QueryComments(u)
 }
 
 // Update returns a builder for updating this User.
@@ -108,6 +192,16 @@ func (u *User) String() string {
 	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", username=")
 	builder.WriteString(u.Username)
+	if v := u.Email; v != nil {
+		builder.WriteString(", email=")
+		builder.WriteString(*v)
+	}
+	if v := u.AvatarURL; v != nil {
+		builder.WriteString(", avatar_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", password=")
+	builder.WriteString(u.Password)
 	builder.WriteByte(')')
 	return builder.String()
 }

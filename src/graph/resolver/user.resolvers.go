@@ -5,14 +5,17 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 )
 
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	usr, err := r.UerService.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return usr, nil
 }
 
 // Query returns generated.QueryResolver implementation.

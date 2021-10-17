@@ -9,6 +9,8 @@ func MapEntGoUserToGraphUser(u *ent.User) *model.User {
 	return &model.User{
 		ID:        Uint64ToString(u.ID),
 		Username: u.Username,
+		Avatar: u.AvatarURL,
+		Email: u.Email,
 		CreatedAt: u.CreatedAt.String(),
 		UpdatedAt: u.UpdatedAt.String(),
 	}

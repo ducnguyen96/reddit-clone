@@ -2,14 +2,15 @@ package schema
 
 import (
 	"context"
-	"database/sql/driver"
 	"entgo.io/ent"
 	"entgo.io/ent/entc/integration/ent/hook"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
+	"errors"
 	"fmt"
 	"github.com/sony/sonyflake"
 	"time"
+	"unicode/utf8"
 )
 
 // tham khảo thêm tại https://entgo.io/docs/faq/
@@ -58,48 +59,13 @@ func IDHook() ent.Hook {
 	}
 }
 
-type Gender int
 
-const (
-	Male Gender = iota
-	Female
-)
-
-func (p Gender) String() string {
-	switch p {
-	case Female:
-		return "FEMALE"
-	default:
-		return "MALE"
-	}
-}
-
-// Values provides list valid values for Enum.
-func (Gender) Values() []string {
-	return []string{Male.String(), Female.String()}
-}
-
-// Value provides the DB a string from int.
-func (p Gender) Value() (driver.Value, error) {
-	return p.String(), nil
-}
-
-// Scan tells our code how to read the enum into our type.
-func (p *Gender) Scan(val interface{}) error {
-	var s string
-	switch v := val.(type) {
-	case nil:
+// MaxRuneCount validates the rune length of a string by using the unicode/utf8 package.
+func MaxRuneCount(maxLen int) func(s string) error {
+	return func(s string) error {
+		if utf8.RuneCountInString(s) > maxLen {
+			return errors.New("value is more than the max length")
+		}
 		return nil
-	case string:
-		s = v
-	case []uint8:
-		s = string(v)
 	}
-	switch s {
-	case "FEMALE":
-		*p = Female
-	default:
-		*p = Male
-	}
-	return nil
 }

@@ -42,10 +42,12 @@ type TokenPayloadDto struct {
 }
 
 type User struct {
-	ID        string `json:"id"`
-	Username  string `json:"username"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+	ID        string  `json:"id"`
+	Username  string  `json:"username"`
+	Email     *string `json:"email"`
+	Avatar    *string `json:"avatar"`
+	CreatedAt string  `json:"createdAt"`
+	UpdatedAt string  `json:"updatedAt"`
 }
 
 type UserLoginInput struct {

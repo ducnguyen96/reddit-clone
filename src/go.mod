@@ -14,6 +14,7 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/sony/sonyflake v1.0.0
 	github.com/vektah/gqlparser/v2 v2.2.0
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 )
 
 require (
@@ -30,7 +31,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

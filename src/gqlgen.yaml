@@ -1,7 +1,7 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - schema/**/*.graphqls
-  - schema/**/*.graphql
+  - graph/schema/**/*.graphqls
+  - graph/schema/**/*.graphql
 # Where should the generated server code go?
 exec:
   filename: graph/generated/generated.go

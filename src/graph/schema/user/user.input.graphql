@@ -1,12 +1,12 @@
 directive @binding(constraint: String!) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
 
 input UserRegisterInput {
-    username: String! @binding(constraint: "required,max=50,min=6,alpha,excludesall=0x7C!<>/;'")
+    username: String! @binding(constraint: "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
     password: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
     repeatPassword: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
 }
 
 input UserLoginInput {
-    username: String!
-    password: String!
+    username: String! @binding(constraint: "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
+    password: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
 }

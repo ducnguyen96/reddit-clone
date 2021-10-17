@@ -77,7 +77,9 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		Avatar    func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
+		Email     func(childComplexity int) int
 		ID        func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		Username  func(childComplexity int) int
@@ -194,12 +196,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TokenPayloadDto.ExpiresIn(childComplexity), true
 
+	case "User.avatar":
+		if e.complexity.User.Avatar == nil {
+			break
+		}
+
+		return e.complexity.User.Avatar(childComplexity), true
+
 	case "User.createdAt":
 		if e.complexity.User.CreatedAt == nil {
 			break
 		}
 
 		return e.complexity.User.CreatedAt(childComplexity), true
+
+	case "User.email":
+		if e.complexity.User.Email == nil {
+			break
+		}
+
+		return e.complexity.User.Email(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -286,15 +302,15 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/common.graphql", Input: `type CustomError {
+	{Name: "graph/schema/common.graphql", Input: `type CustomError {
     message: String!
     path: String!
 }`, BuiltIn: false},
-	{Name: "schema/user/auth.graphql", Input: `extend type Mutation {
+	{Name: "graph/schema/user/auth.graphql", Input: `extend type Mutation {
     register(input: UserRegisterInput!): RegisterResult!
     login(input: UserLoginInput!): TokenPayloadDto!
 }`, BuiltIn: false},
-	{Name: "schema/user/auth.type.graphql", Input: `type TokenPayloadDto {
+	{Name: "graph/schema/user/auth.type.graphql", Input: `type TokenPayloadDto {
     expiresIn: Int
     accessToken: String
 }
@@ -313,13 +329,13 @@ type RegisterInternalServerError {
 type RegisterBadRequest {
     errors: [CustomError!]!
 }`, BuiltIn: false},
-	{Name: "schema/user/user.graphql", Input: `extend type Query {
+	{Name: "graph/schema/user/user.graphql", Input: `extend type Query {
     me: User
 }`, BuiltIn: false},
-	{Name: "schema/user/user.input.graphql", Input: `directive @binding(constraint: String!) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+	{Name: "graph/schema/user/user.input.graphql", Input: `directive @binding(constraint: String!) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
 
 input UserRegisterInput {
-    username: String! @binding(constraint: "required,max=50,min=6,alpha,excludesall=0x7C!<>/;'")
+    username: String! @binding(constraint: "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
     password: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
     repeatPassword: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
 }
@@ -328,9 +344,11 @@ input UserLoginInput {
     username: String!
     password: String!
 }`, BuiltIn: false},
-	{Name: "schema/user/user.type.graphql", Input: `type User {
+	{Name: "graph/schema/user/user.type.graphql", Input: `type User {
     id: ID!
     username: String!
+    email: String
+    avatar: String
     createdAt: String!
     updatedAt: String!
 }
@@ -973,6 +991,70 @@ func (ec *executionContext) _User_username(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_avatar(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Avatar, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2213,7 +2295,7 @@ func (ec *executionContext) unmarshalInputUserRegisterInput(ctx context.Context,
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalNString2string(ctx, v) }
 			directive1 := func(ctx context.Context) (interface{}, error) {
-				constraint, err := ec.unmarshalNString2string(ctx, "required,max=50,min=6,alpha,excludesall=0x7C!<>/;'")
+				constraint, err := ec.unmarshalNString2string(ctx, "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
 				if err != nil {
 					return nil, err
 				}
@@ -2571,6 +2653,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "email":
+			out.Values[i] = ec._User_email(ctx, field, obj)
+		case "avatar":
+			out.Values[i] = ec._User_avatar(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

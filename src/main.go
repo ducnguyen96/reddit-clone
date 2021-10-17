@@ -13,6 +13,7 @@ import (
 	graph "github.com/ducnguyen96/reddit-clone/graph/resolver"
 	auth_services "github.com/ducnguyen96/reddit-clone/graph/services/auth_services"
 	"github.com/ducnguyen96/reddit-clone/graph/services/user_services"
+	"github.com/ducnguyen96/reddit-clone/utils"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
@@ -62,6 +63,8 @@ func main() {
 
 	// Set up a http server.
 	r := gin.Default()
+	r.Use(utils.GinContextToContextMiddleware())
+
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome to reddit clone")
 	})

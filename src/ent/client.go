@@ -9,10 +9,16 @@ import (
 
 	"github.com/ducnguyen96/reddit-clone/ent/migrate"
 
+	"github.com/ducnguyen96/reddit-clone/ent/comment"
+	"github.com/ducnguyen96/reddit-clone/ent/community"
+	"github.com/ducnguyen96/reddit-clone/ent/media"
+	"github.com/ducnguyen96/reddit-clone/ent/post"
+	"github.com/ducnguyen96/reddit-clone/ent/tag"
 	"github.com/ducnguyen96/reddit-clone/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -20,6 +26,16 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
+	// Community is the client for interacting with the Community builders.
+	Community *CommunityClient
+	// Media is the client for interacting with the Media builders.
+	Media *MediaClient
+	// Post is the client for interacting with the Post builders.
+	Post *PostClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -35,6 +51,11 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Comment = NewCommentClient(c.config)
+	c.Community = NewCommunityClient(c.config)
+	c.Media = NewMediaClient(c.config)
+	c.Post = NewPostClient(c.config)
+	c.Tag = NewTagClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -67,9 +88,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		User:   NewUserClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Comment:   NewCommentClient(cfg),
+		Community: NewCommunityClient(cfg),
+		Media:     NewMediaClient(cfg),
+		Post:      NewPostClient(cfg),
+		Tag:       NewTagClient(cfg),
+		User:      NewUserClient(cfg),
 	}, nil
 }
 
@@ -87,15 +113,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		config: cfg,
-		User:   NewUserClient(cfg),
+		config:    cfg,
+		Comment:   NewCommentClient(cfg),
+		Community: NewCommunityClient(cfg),
+		Media:     NewMediaClient(cfg),
+		Post:      NewPostClient(cfg),
+		Tag:       NewTagClient(cfg),
+		User:      NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		User.
+//		Comment.
 //		Query().
 //		Count(ctx)
 //
@@ -118,7 +149,579 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Comment.Use(hooks...)
+	c.Community.Use(hooks...)
+	c.Media.Use(hooks...)
+	c.Post.Use(hooks...)
+	c.Tag.Use(hooks...)
 	c.User.Use(hooks...)
+}
+
+// CommentClient is a client for the Comment schema.
+type CommentClient struct {
+	config
+}
+
+// NewCommentClient returns a client for the Comment from the given config.
+func NewCommentClient(c config) *CommentClient {
+	return &CommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `comment.Hooks(f(g(h())))`.
+func (c *CommentClient) Use(hooks ...Hook) {
+	c.hooks.Comment = append(c.hooks.Comment, hooks...)
+}
+
+// Create returns a create builder for Comment.
+func (c *CommentClient) Create() *CommentCreate {
+	mutation := newCommentMutation(c.config, OpCreate)
+	return &CommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Comment entities.
+func (c *CommentClient) CreateBulk(builders ...*CommentCreate) *CommentCreateBulk {
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Comment.
+func (c *CommentClient) Update() *CommentUpdate {
+	mutation := newCommentMutation(c.config, OpUpdate)
+	return &CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CommentClient) UpdateOne(co *Comment) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withComment(co))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CommentClient) UpdateOneID(id uint64) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withCommentID(id))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Comment.
+func (c *CommentClient) Delete() *CommentDelete {
+	mutation := newCommentMutation(c.config, OpDelete)
+	return &CommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *CommentClient) DeleteOne(co *Comment) *CommentDeleteOne {
+	return c.DeleteOneID(co.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *CommentClient) DeleteOneID(id uint64) *CommentDeleteOne {
+	builder := c.Delete().Where(comment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CommentDeleteOne{builder}
+}
+
+// Query returns a query builder for Comment.
+func (c *CommentClient) Query() *CommentQuery {
+	return &CommentQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Comment entity by its id.
+func (c *CommentClient) Get(ctx context.Context, id uint64) (*Comment, error) {
+	return c.Query().Where(comment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CommentClient) GetX(ctx context.Context, id uint64) *Comment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPosts queries the posts edge of a Comment.
+func (c *CommentClient) QueryPosts(co *Comment) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, comment.PostsTable, comment.PostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Comment.
+func (c *CommentClient) QueryUser(co *Comment) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, comment.UserTable, comment.UserPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CommentClient) Hooks() []Hook {
+	hooks := c.hooks.Comment
+	return append(hooks[:len(hooks):len(hooks)], comment.Hooks[:]...)
+}
+
+// CommunityClient is a client for the Community schema.
+type CommunityClient struct {
+	config
+}
+
+// NewCommunityClient returns a client for the Community from the given config.
+func NewCommunityClient(c config) *CommunityClient {
+	return &CommunityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `community.Hooks(f(g(h())))`.
+func (c *CommunityClient) Use(hooks ...Hook) {
+	c.hooks.Community = append(c.hooks.Community, hooks...)
+}
+
+// Create returns a create builder for Community.
+func (c *CommunityClient) Create() *CommunityCreate {
+	mutation := newCommunityMutation(c.config, OpCreate)
+	return &CommunityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Community entities.
+func (c *CommunityClient) CreateBulk(builders ...*CommunityCreate) *CommunityCreateBulk {
+	return &CommunityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Community.
+func (c *CommunityClient) Update() *CommunityUpdate {
+	mutation := newCommunityMutation(c.config, OpUpdate)
+	return &CommunityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CommunityClient) UpdateOne(co *Community) *CommunityUpdateOne {
+	mutation := newCommunityMutation(c.config, OpUpdateOne, withCommunity(co))
+	return &CommunityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CommunityClient) UpdateOneID(id uint64) *CommunityUpdateOne {
+	mutation := newCommunityMutation(c.config, OpUpdateOne, withCommunityID(id))
+	return &CommunityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Community.
+func (c *CommunityClient) Delete() *CommunityDelete {
+	mutation := newCommunityMutation(c.config, OpDelete)
+	return &CommunityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *CommunityClient) DeleteOne(co *Community) *CommunityDeleteOne {
+	return c.DeleteOneID(co.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *CommunityClient) DeleteOneID(id uint64) *CommunityDeleteOne {
+	builder := c.Delete().Where(community.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CommunityDeleteOne{builder}
+}
+
+// Query returns a query builder for Community.
+func (c *CommunityClient) Query() *CommunityQuery {
+	return &CommunityQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Community entity by its id.
+func (c *CommunityClient) Get(ctx context.Context, id uint64) (*Community, error) {
+	return c.Query().Where(community.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CommunityClient) GetX(ctx context.Context, id uint64) *Community {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a Community.
+func (c *CommunityClient) QueryUsers(co *Community) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(community.Table, community.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, community.UsersTable, community.UsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CommunityClient) Hooks() []Hook {
+	hooks := c.hooks.Community
+	return append(hooks[:len(hooks):len(hooks)], community.Hooks[:]...)
+}
+
+// MediaClient is a client for the Media schema.
+type MediaClient struct {
+	config
+}
+
+// NewMediaClient returns a client for the Media from the given config.
+func NewMediaClient(c config) *MediaClient {
+	return &MediaClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `media.Hooks(f(g(h())))`.
+func (c *MediaClient) Use(hooks ...Hook) {
+	c.hooks.Media = append(c.hooks.Media, hooks...)
+}
+
+// Create returns a create builder for Media.
+func (c *MediaClient) Create() *MediaCreate {
+	mutation := newMediaMutation(c.config, OpCreate)
+	return &MediaCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Media entities.
+func (c *MediaClient) CreateBulk(builders ...*MediaCreate) *MediaCreateBulk {
+	return &MediaCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Media.
+func (c *MediaClient) Update() *MediaUpdate {
+	mutation := newMediaMutation(c.config, OpUpdate)
+	return &MediaUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MediaClient) UpdateOne(m *Media) *MediaUpdateOne {
+	mutation := newMediaMutation(c.config, OpUpdateOne, withMedia(m))
+	return &MediaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MediaClient) UpdateOneID(id uint64) *MediaUpdateOne {
+	mutation := newMediaMutation(c.config, OpUpdateOne, withMediaID(id))
+	return &MediaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Media.
+func (c *MediaClient) Delete() *MediaDelete {
+	mutation := newMediaMutation(c.config, OpDelete)
+	return &MediaDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *MediaClient) DeleteOne(m *Media) *MediaDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *MediaClient) DeleteOneID(id uint64) *MediaDeleteOne {
+	builder := c.Delete().Where(media.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MediaDeleteOne{builder}
+}
+
+// Query returns a query builder for Media.
+func (c *MediaClient) Query() *MediaQuery {
+	return &MediaQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Media entity by its id.
+func (c *MediaClient) Get(ctx context.Context, id uint64) (*Media, error) {
+	return c.Query().Where(media.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MediaClient) GetX(ctx context.Context, id uint64) *Media {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *MediaClient) Hooks() []Hook {
+	hooks := c.hooks.Media
+	return append(hooks[:len(hooks):len(hooks)], media.Hooks[:]...)
+}
+
+// PostClient is a client for the Post schema.
+type PostClient struct {
+	config
+}
+
+// NewPostClient returns a client for the Post from the given config.
+func NewPostClient(c config) *PostClient {
+	return &PostClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `post.Hooks(f(g(h())))`.
+func (c *PostClient) Use(hooks ...Hook) {
+	c.hooks.Post = append(c.hooks.Post, hooks...)
+}
+
+// Create returns a create builder for Post.
+func (c *PostClient) Create() *PostCreate {
+	mutation := newPostMutation(c.config, OpCreate)
+	return &PostCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Post entities.
+func (c *PostClient) CreateBulk(builders ...*PostCreate) *PostCreateBulk {
+	return &PostCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Post.
+func (c *PostClient) Update() *PostUpdate {
+	mutation := newPostMutation(c.config, OpUpdate)
+	return &PostUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PostClient) UpdateOne(po *Post) *PostUpdateOne {
+	mutation := newPostMutation(c.config, OpUpdateOne, withPost(po))
+	return &PostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PostClient) UpdateOneID(id uint64) *PostUpdateOne {
+	mutation := newPostMutation(c.config, OpUpdateOne, withPostID(id))
+	return &PostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Post.
+func (c *PostClient) Delete() *PostDelete {
+	mutation := newPostMutation(c.config, OpDelete)
+	return &PostDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *PostClient) DeleteOne(po *Post) *PostDeleteOne {
+	return c.DeleteOneID(po.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *PostClient) DeleteOneID(id uint64) *PostDeleteOne {
+	builder := c.Delete().Where(post.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PostDeleteOne{builder}
+}
+
+// Query returns a query builder for Post.
+func (c *PostClient) Query() *PostQuery {
+	return &PostQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Post entity by its id.
+func (c *PostClient) Get(ctx context.Context, id uint64) (*Post, error) {
+	return c.Query().Where(post.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PostClient) GetX(ctx context.Context, id uint64) *Post {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOwner queries the owner edge of a Post.
+func (c *PostClient) QueryOwner(po *Post) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, post.OwnerTable, post.OwnerPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTags queries the tags edge of a Post.
+func (c *PostClient) QueryTags(po *Post) *TagQuery {
+	query := &TagQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, post.TagsTable, post.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryComments queries the comments edge of a Post.
+func (c *PostClient) QueryComments(po *Post) *CommentQuery {
+	query := &CommentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, post.CommentsTable, post.CommentsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PostClient) Hooks() []Hook {
+	hooks := c.hooks.Post
+	return append(hooks[:len(hooks):len(hooks)], post.Hooks[:]...)
+}
+
+// TagClient is a client for the Tag schema.
+type TagClient struct {
+	config
+}
+
+// NewTagClient returns a client for the Tag from the given config.
+func NewTagClient(c config) *TagClient {
+	return &TagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tag.Hooks(f(g(h())))`.
+func (c *TagClient) Use(hooks ...Hook) {
+	c.hooks.Tag = append(c.hooks.Tag, hooks...)
+}
+
+// Create returns a create builder for Tag.
+func (c *TagClient) Create() *TagCreate {
+	mutation := newTagMutation(c.config, OpCreate)
+	return &TagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Tag entities.
+func (c *TagClient) CreateBulk(builders ...*TagCreate) *TagCreateBulk {
+	return &TagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Tag.
+func (c *TagClient) Update() *TagUpdate {
+	mutation := newTagMutation(c.config, OpUpdate)
+	return &TagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TagClient) UpdateOne(t *Tag) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTag(t))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TagClient) UpdateOneID(id uint64) *TagUpdateOne {
+	mutation := newTagMutation(c.config, OpUpdateOne, withTagID(id))
+	return &TagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Tag.
+func (c *TagClient) Delete() *TagDelete {
+	mutation := newTagMutation(c.config, OpDelete)
+	return &TagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TagClient) DeleteOne(t *Tag) *TagDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TagClient) DeleteOneID(id uint64) *TagDeleteOne {
+	builder := c.Delete().Where(tag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TagDeleteOne{builder}
+}
+
+// Query returns a query builder for Tag.
+func (c *TagClient) Query() *TagQuery {
+	return &TagQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Tag entity by its id.
+func (c *TagClient) Get(ctx context.Context, id uint64) (*Tag, error) {
+	return c.Query().Where(tag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TagClient) GetX(ctx context.Context, id uint64) *Tag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPosts queries the posts edge of a Tag.
+func (c *TagClient) QueryPosts(t *Tag) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, tag.PostsTable, tag.PostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TagClient) Hooks() []Hook {
+	hooks := c.hooks.Tag
+	return append(hooks[:len(hooks):len(hooks)], tag.Hooks[:]...)
 }
 
 // UserClient is a client for the User schema.
@@ -204,6 +807,54 @@ func (c *UserClient) GetX(ctx context.Context, id uint64) *User {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCommunities queries the communities edge of a User.
+func (c *UserClient) QueryCommunities(u *User) *CommunityQuery {
+	query := &CommunityQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(community.Table, community.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.CommunitiesTable, user.CommunitiesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPosts queries the posts edge of a User.
+func (c *UserClient) QueryPosts(u *User) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.PostsTable, user.PostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryComments queries the comments edge of a User.
+func (c *UserClient) QueryComments(u *User) *CommentQuery {
+	query := &CommentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.CommentsTable, user.CommentsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

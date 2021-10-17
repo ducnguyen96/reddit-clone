@@ -6,13 +6,21 @@ package graph
 import (
 	"context"
 	"fmt"
-
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.UserRegisterInput) (model.RegisterResult, error) {
+	pwd, rpwd := input.Password, input.RepeatPassword
+
+	if pwd != rpwd {
+		return &model.RegisterBadRequest{Errors: []*model.CustomError{&model.CustomError{
+			Message: "password and repeatPassword not match",
+			Path:    "Register",
+		}}}, nil
+	}
+
 	user, transaction, err := r.UerService.CreateUserTransaction(ctx, input)
 	if err != nil {
 		return &model.RegisterBadRequest{Errors: []*model.CustomError{&model.CustomError{
@@ -54,7 +62,19 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserRegiste
 }
 
 func (r *mutationResolver) Login(ctx context.Context, input model.UserLoginInput) (*model.TokenPayloadDto, error) {
-	panic(fmt.Errorf("not implemented"))
+	usr, err := r.UerService.Login(ctx, input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := r.AuthService.CreateToken(usr.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
