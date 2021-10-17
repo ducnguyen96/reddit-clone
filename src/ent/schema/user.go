@@ -29,6 +29,7 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("communities", Community.Type).Ref("users"),
+		edge.From("my_communities", Community.Type).Ref("admins"),
 		edge.To("posts", Post.Type),
 		edge.To("comments", Comment.Type),
 	}

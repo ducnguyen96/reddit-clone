@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
+	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/post"
 	"github.com/ducnguyen96/reddit-clone/ent/predicate"
 	"github.com/ducnguyen96/reddit-clone/ent/tag"
@@ -29,9 +30,10 @@ type PostQuery struct {
 	fields     []string
 	predicates []predicate.Post
 	// eager-loading edges.
-	withOwner    *UserQuery
-	withTags     *TagQuery
-	withComments *CommentQuery
+	withOwner     *UserQuery
+	withCommunity *CommunityQuery
+	withTags      *TagQuery
+	withComments  *CommentQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -83,6 +85,28 @@ func (pq *PostQuery) QueryOwner() *UserQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, post.OwnerTable, post.OwnerPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCommunity chains the current query on the "community" edge.
+func (pq *PostQuery) QueryCommunity() *CommunityQuery {
+	query := &CommunityQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(community.Table, community.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, post.CommunityTable, post.CommunityPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -310,14 +334,15 @@ func (pq *PostQuery) Clone() *PostQuery {
 		return nil
 	}
 	return &PostQuery{
-		config:       pq.config,
-		limit:        pq.limit,
-		offset:       pq.offset,
-		order:        append([]OrderFunc{}, pq.order...),
-		predicates:   append([]predicate.Post{}, pq.predicates...),
-		withOwner:    pq.withOwner.Clone(),
-		withTags:     pq.withTags.Clone(),
-		withComments: pq.withComments.Clone(),
+		config:        pq.config,
+		limit:         pq.limit,
+		offset:        pq.offset,
+		order:         append([]OrderFunc{}, pq.order...),
+		predicates:    append([]predicate.Post{}, pq.predicates...),
+		withOwner:     pq.withOwner.Clone(),
+		withCommunity: pq.withCommunity.Clone(),
+		withTags:      pq.withTags.Clone(),
+		withComments:  pq.withComments.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -332,6 +357,17 @@ func (pq *PostQuery) WithOwner(opts ...func(*UserQuery)) *PostQuery {
 		opt(query)
 	}
 	pq.withOwner = query
+	return pq
+}
+
+// WithCommunity tells the query-builder to eager-load the nodes that are connected to
+// the "community" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PostQuery) WithCommunity(opts ...func(*CommunityQuery)) *PostQuery {
+	query := &CommunityQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withCommunity = query
 	return pq
 }
 
@@ -422,8 +458,9 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 	var (
 		nodes       = []*Post{}
 		_spec       = pq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			pq.withOwner != nil,
+			pq.withCommunity != nil,
 			pq.withTags != nil,
 			pq.withComments != nil,
 		}
@@ -509,6 +546,71 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Owner = append(nodes[i].Edges.Owner, n)
+			}
+		}
+	}
+
+	if query := pq.withCommunity; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[uint64]*Post, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Community = []*Community{}
+		}
+		var (
+			edgeids []uint64
+			edges   = make(map[uint64][]*Post)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   post.CommunityTable,
+				Columns: post.CommunityPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(post.CommunityPrimaryKey[1], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := uint64(eout.Int64)
+				inValue := uint64(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, pq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "community": %w`, err)
+		}
+		query.Where(community.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "community" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Community = append(nodes[i].Edges.Community, n)
 			}
 		}
 	}

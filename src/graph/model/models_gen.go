@@ -12,9 +12,70 @@ type RegisterResult interface {
 	IsRegisterResult()
 }
 
+type Community struct {
+	ID        string        `json:"id"`
+	Name      string        `json:"name"`
+	Slug      string        `json:"slug"`
+	Type      CommunityType `json:"type"`
+	IsAdult   bool          `json:"isAdult"`
+	CreatedAt string        `json:"createdAt"`
+	UpdatedAt string        `json:"updatedAt"`
+}
+
+type CommunityPagination struct {
+	Length      int          `json:"length"`
+	CurrentPage int          `json:"currentPage"`
+	Communities []*Community `json:"communities"`
+}
+
+type CreateCommunityInput struct {
+	Name    string        `json:"name"`
+	Type    CommunityType `json:"type"`
+	IsAdult bool          `json:"isAdult"`
+}
+
+type CreatePostInput struct {
+	Title       string           `json:"title"`
+	Content     string           `json:"content"`
+	Type        PostType         `json:"type"`
+	ContentMode InputContentMode `json:"contentMode"`
+	CommunityID string           `json:"communityId"`
+}
+
 type CustomError struct {
 	Message string `json:"message"`
 	Path    string `json:"path"`
+}
+
+type Post struct {
+	ID          string           `json:"id"`
+	Title       string           `json:"title"`
+	Slug        string           `json:"slug"`
+	Content     string           `json:"content"`
+	Type        PostType         `json:"type"`
+	ContentMode InputContentMode `json:"contentMode"`
+	UpVotes     int              `json:"upVotes"`
+	DownVotes   int              `json:"downVotes"`
+	CreatedAt   string           `json:"createdAt"`
+	UpdatedAt   string           `json:"updatedAt"`
+	Community   *Community       `json:"community"`
+	Owner       *User            `json:"owner"`
+}
+
+type PostPagination struct {
+	Length      int     `json:"length"`
+	CurrentPage int     `json:"currentPage"`
+	Posts       []*Post `json:"posts"`
+}
+
+type QueryCommunityInput struct {
+	Limit *int `json:"limit"`
+	Page  *int `json:"page"`
+}
+
+type QueryPostInput struct {
+	Limit *int `json:"limit"`
+	Page  *int `json:"page"`
 }
 
 type RegisterBadRequest struct {
@@ -61,6 +122,49 @@ type UserRegisterInput struct {
 	RepeatPassword string `json:"repeatPassword"`
 }
 
+type CommunityType string
+
+const (
+	CommunityTypePublic     CommunityType = "Public"
+	CommunityTypeRestricted CommunityType = "Restricted"
+	CommunityTypePrivate    CommunityType = "Private"
+)
+
+var AllCommunityType = []CommunityType{
+	CommunityTypePublic,
+	CommunityTypeRestricted,
+	CommunityTypePrivate,
+}
+
+func (e CommunityType) IsValid() bool {
+	switch e {
+	case CommunityTypePublic, CommunityTypeRestricted, CommunityTypePrivate:
+		return true
+	}
+	return false
+}
+
+func (e CommunityType) String() string {
+	return string(e)
+}
+
+func (e *CommunityType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CommunityType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CommunityType", str)
+	}
+	return nil
+}
+
+func (e CommunityType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type Gender string
 
 const (
@@ -99,5 +203,89 @@ func (e *Gender) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Gender) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InputContentMode string
+
+const (
+	InputContentModeMarkDown   InputContentMode = "MarkDown"
+	InputContentModeTextEditor InputContentMode = "TextEditor"
+)
+
+var AllInputContentMode = []InputContentMode{
+	InputContentModeMarkDown,
+	InputContentModeTextEditor,
+}
+
+func (e InputContentMode) IsValid() bool {
+	switch e {
+	case InputContentModeMarkDown, InputContentModeTextEditor:
+		return true
+	}
+	return false
+}
+
+func (e InputContentMode) String() string {
+	return string(e)
+}
+
+func (e *InputContentMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InputContentMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InputContentMode", str)
+	}
+	return nil
+}
+
+func (e InputContentMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PostType string
+
+const (
+	PostTypePost       PostType = "Post"
+	PostTypeImageVideo PostType = "Image_Video"
+	PostTypeLink       PostType = "Link"
+)
+
+var AllPostType = []PostType{
+	PostTypePost,
+	PostTypeImageVideo,
+	PostTypeLink,
+}
+
+func (e PostType) IsValid() bool {
+	switch e {
+	case PostTypePost, PostTypeImageVideo, PostTypeLink:
+		return true
+	}
+	return false
+}
+
+func (e PostType) String() string {
+	return string(e)
+}
+
+func (e *PostType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostType", str)
+	}
+	return nil
+}
+
+func (e PostType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

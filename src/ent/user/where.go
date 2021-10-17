@@ -787,6 +787,34 @@ func HasCommunitiesWith(preds ...predicate.Community) predicate.User {
 	})
 }
 
+// HasMyCommunities applies the HasEdge predicate on the "my_communities" edge.
+func HasMyCommunities() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MyCommunitiesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, MyCommunitiesTable, MyCommunitiesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMyCommunitiesWith applies the HasEdge predicate on the "my_communities" edge with a given conditions (other predicates).
+func HasMyCommunitiesWith(preds ...predicate.Community) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MyCommunitiesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, MyCommunitiesTable, MyCommunitiesPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasPosts applies the HasEdge predicate on the "posts" edge.
 func HasPosts() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

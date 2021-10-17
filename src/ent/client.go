@@ -381,6 +381,38 @@ func (c *CommunityClient) QueryUsers(co *Community) *UserQuery {
 	return query
 }
 
+// QueryAdmins queries the admins edge of a Community.
+func (c *CommunityClient) QueryAdmins(co *Community) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(community.Table, community.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, community.AdminsTable, community.AdminsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPosts queries the posts edge of a Community.
+func (c *CommunityClient) QueryPosts(co *Community) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := co.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(community.Table, community.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, community.PostsTable, community.PostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(co.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CommunityClient) Hooks() []Hook {
 	hooks := c.hooks.Community
@@ -572,6 +604,22 @@ func (c *PostClient) QueryOwner(po *Post) *UserQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, post.OwnerTable, post.OwnerPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCommunity queries the community edge of a Post.
+func (c *PostClient) QueryCommunity(po *Post) *CommunityQuery {
+	query := &CommunityQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(community.Table, community.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, post.CommunityTable, post.CommunityPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
 		return fromV, nil
@@ -818,6 +866,22 @@ func (c *UserClient) QueryCommunities(u *User) *CommunityQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(community.Table, community.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.CommunitiesTable, user.CommunitiesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMyCommunities queries the my_communities edge of a User.
+func (c *UserClient) QueryMyCommunities(u *User) *CommunityQuery {
+	query := &CommunityQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(community.Table, community.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.MyCommunitiesTable, user.MyCommunitiesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

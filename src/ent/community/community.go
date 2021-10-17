@@ -21,12 +21,18 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
 	// FieldIsAdult holds the string denoting the is_adult field in the database.
 	FieldIsAdult = "is_adult"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
+	// EdgeAdmins holds the string denoting the admins edge name in mutations.
+	EdgeAdmins = "admins"
+	// EdgePosts holds the string denoting the posts edge name in mutations.
+	EdgePosts = "posts"
 	// Table holds the table name of the community in the database.
 	Table = "communities"
 	// UsersTable is the table that holds the users relation/edge. The primary key declared below.
@@ -34,6 +40,16 @@ const (
 	// UsersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UsersInverseTable = "users"
+	// AdminsTable is the table that holds the admins relation/edge. The primary key declared below.
+	AdminsTable = "community_admins"
+	// AdminsInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	AdminsInverseTable = "users"
+	// PostsTable is the table that holds the posts relation/edge. The primary key declared below.
+	PostsTable = "community_posts"
+	// PostsInverseTable is the table name for the Post entity.
+	// It exists in this package in order to avoid circular dependency with the "post" package.
+	PostsInverseTable = "posts"
 )
 
 // Columns holds all SQL columns for community fields.
@@ -42,6 +58,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldName,
+	FieldSlug,
 	FieldType,
 	FieldIsAdult,
 }
@@ -50,6 +67,12 @@ var (
 	// UsersPrimaryKey and UsersColumn2 are the table columns denoting the
 	// primary key for the users relation (M2M).
 	UsersPrimaryKey = []string{"community_id", "user_id"}
+	// AdminsPrimaryKey and AdminsColumn2 are the table columns denoting the
+	// primary key for the admins relation (M2M).
+	AdminsPrimaryKey = []string{"community_id", "user_id"}
+	// PostsPrimaryKey and PostsColumn2 are the table columns denoting the
+	// primary key for the posts relation (M2M).
+	PostsPrimaryKey = []string{"community_id", "post_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -78,6 +101,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	SlugValidator func(string) error
 	// DefaultIsAdult holds the default value on creation for the "is_adult" field.
 	DefaultIsAdult bool
 )

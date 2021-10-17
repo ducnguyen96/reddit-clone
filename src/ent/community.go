@@ -23,6 +23,8 @@ type Community struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Type holds the value of the "type" field.
 	Type enums.CommunityType `json:"type,omitempty"`
 	// IsAdult holds the value of the "is_adult" field.
@@ -36,9 +38,13 @@ type Community struct {
 type CommunityEdges struct {
 	// Users holds the value of the users edge.
 	Users []*User `json:"users,omitempty"`
+	// Admins holds the value of the admins edge.
+	Admins []*User `json:"admins,omitempty"`
+	// Posts holds the value of the posts edge.
+	Posts []*Post `json:"posts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // UsersOrErr returns the Users value or an error if the edge
@@ -48,6 +54,24 @@ func (e CommunityEdges) UsersOrErr() ([]*User, error) {
 		return e.Users, nil
 	}
 	return nil, &NotLoadedError{edge: "users"}
+}
+
+// AdminsOrErr returns the Admins value or an error if the edge
+// was not loaded in eager-loading.
+func (e CommunityEdges) AdminsOrErr() ([]*User, error) {
+	if e.loadedTypes[1] {
+		return e.Admins, nil
+	}
+	return nil, &NotLoadedError{edge: "admins"}
+}
+
+// PostsOrErr returns the Posts value or an error if the edge
+// was not loaded in eager-loading.
+func (e CommunityEdges) PostsOrErr() ([]*Post, error) {
+	if e.loadedTypes[2] {
+		return e.Posts, nil
+	}
+	return nil, &NotLoadedError{edge: "posts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -61,7 +85,7 @@ func (*Community) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullBool)
 		case community.FieldID:
 			values[i] = new(sql.NullInt64)
-		case community.FieldName:
+		case community.FieldName, community.FieldSlug:
 			values[i] = new(sql.NullString)
 		case community.FieldCreatedAt, community.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -104,6 +128,12 @@ func (c *Community) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				c.Name = value.String
 			}
+		case community.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				c.Slug = value.String
+			}
 		case community.FieldType:
 			if value, ok := values[i].(*enums.CommunityType); !ok {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
@@ -124,6 +154,16 @@ func (c *Community) assignValues(columns []string, values []interface{}) error {
 // QueryUsers queries the "users" edge of the Community entity.
 func (c *Community) QueryUsers() *UserQuery {
 	return (&CommunityClient{config: c.config}).QueryUsers(c)
+}
+
+// QueryAdmins queries the "admins" edge of the Community entity.
+func (c *Community) QueryAdmins() *UserQuery {
+	return (&CommunityClient{config: c.config}).QueryAdmins(c)
+}
+
+// QueryPosts queries the "posts" edge of the Community entity.
+func (c *Community) QueryPosts() *PostQuery {
+	return (&CommunityClient{config: c.config}).QueryPosts(c)
 }
 
 // Update returns a builder for updating this Community.
@@ -155,6 +195,8 @@ func (c *Community) String() string {
 	builder.WriteString(c.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", name=")
 	builder.WriteString(c.Name)
+	builder.WriteString(", slug=")
+	builder.WriteString(c.Slug)
 	builder.WriteString(", type=")
 	builder.WriteString(fmt.Sprintf("%v", c.Type))
 	builder.WriteString(", is_adult=")

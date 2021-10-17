@@ -1,0 +1,8 @@
+extend type Query {
+    getPost(slug: String!): Post!
+    queryPost(input: QueryPostInput!): PostPagination!
+}
+
+extend type Mutation {
+    createPost(input: CreatePostInput!): Post!
+}

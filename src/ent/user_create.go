@@ -112,6 +112,21 @@ func (uc *UserCreate) AddCommunities(c ...*Community) *UserCreate {
 	return uc.AddCommunityIDs(ids...)
 }
 
+// AddMyCommunityIDs adds the "my_communities" edge to the Community entity by IDs.
+func (uc *UserCreate) AddMyCommunityIDs(ids ...uint64) *UserCreate {
+	uc.mutation.AddMyCommunityIDs(ids...)
+	return uc
+}
+
+// AddMyCommunities adds the "my_communities" edges to the Community entity.
+func (uc *UserCreate) AddMyCommunities(c ...*Community) *UserCreate {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uc.AddMyCommunityIDs(ids...)
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
 func (uc *UserCreate) AddPostIDs(ids ...uint64) *UserCreate {
 	uc.mutation.AddPostIDs(ids...)
@@ -338,6 +353,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Inverse: true,
 			Table:   user.CommunitiesTable,
 			Columns: user.CommunitiesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.MyCommunitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.MyCommunitiesTable,
+			Columns: user.MyCommunitiesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

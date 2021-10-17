@@ -25,8 +25,8 @@ func (Comment) Fields() []ent.Field {
 // Edges of the Comment.
 func (Comment) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("posts", Post.Type).Ref("comments"),
-		edge.From("user", User.Type).Ref("comments"),
+		edge.From("posts", Post.Type).Ref("comments").Required(),
+		edge.From("user", User.Type).Ref("comments").Required(),
 	}
 }
 

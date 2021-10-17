@@ -35,17 +35,20 @@ func (s *UserService) CreateUserTransaction(ctx context.Context, userRegisterInp
 	return usr, transaction, err
 }
 
-func (s *UserService) GetCurrentUser(ctx context.Context) (*model.User, error) {
+func (s *UserService) GetCurrentUser(ctx context.Context) (*ent.User, error) {
 	token := utils.GetAuthToken(ctx)
 	usr, err := s.GetUserByToken(ctx, token)
 	if err != nil {
 		fmt.Printf("%v", err)
 		return nil, err
 	}
+	if usr == nil {
+		return nil, errors.New("unauthorized")
+	}
 	return usr, nil
 }
 
-func (s *UserService) GetUserByToken(ctx context.Context, token string) (*model.User, error) {
+func (s *UserService) GetUserByToken(ctx context.Context, token string) (*ent.User, error) {
 	if !strings.HasPrefix(token, "Bearer ") {
 		return nil, errors.New("invalid token")
 	}
@@ -61,7 +64,7 @@ func (s *UserService) GetUserByToken(ctx context.Context, token string) (*model.
 
 	if claims, ok := parsedToken.Claims.(*auth_services.MyCustomClaims); ok && parsedToken.Valid {
 		usr := s.repository.FindById(ctx, claims.UserId)
-		return utils.MapEntGoUserToGraphUser(usr), nil
+		return usr, nil
 	} else {
 		return nil, err
 	}

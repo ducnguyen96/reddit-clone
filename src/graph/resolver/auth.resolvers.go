@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/ducnguyen96/reddit-clone/graph/generated"
+
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
 )
@@ -15,18 +15,20 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserRegiste
 	pwd, rpwd := input.Password, input.RepeatPassword
 
 	if pwd != rpwd {
-		return &model.RegisterBadRequest{Errors: []*model.CustomError{&model.CustomError{
+		customErr := &model.CustomError{
 			Message: "password and repeatPassword not match",
 			Path:    "Register",
-		}}}, nil
+		}
+		return &model.RegisterBadRequest{Errors: []*model.CustomError{customErr}}, nil
 	}
 
 	user, transaction, err := r.UerService.CreateUserTransaction(ctx, input)
 	if err != nil {
-		return &model.RegisterBadRequest{Errors: []*model.CustomError{&model.CustomError{
+		customErr := &model.CustomError{
 			Message: fmt.Sprintf("%v", err),
 			Path:    "Register",
-		}}}, nil
+		}
+		return &model.RegisterBadRequest{Errors: []*model.CustomError{customErr}}, nil
 	}
 
 	token, err := r.AuthService.CreateToken(user.ID)
@@ -76,8 +78,3 @@ func (r *mutationResolver) Login(ctx context.Context, input model.UserLoginInput
 
 	return token, nil
 }
-
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
-
-type mutationResolver struct{ *Resolver }

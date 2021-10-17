@@ -23,6 +23,8 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Content holds the value of the "content" field.
 	Content string `json:"content,omitempty"`
 	// Type holds the value of the "type" field.
@@ -42,13 +44,15 @@ type Post struct {
 type PostEdges struct {
 	// Owner holds the value of the owner edge.
 	Owner []*User `json:"owner,omitempty"`
+	// Community holds the value of the community edge.
+	Community []*Community `json:"community,omitempty"`
 	// Tags holds the value of the tags edge.
 	Tags []*Tag `json:"tags,omitempty"`
 	// Comments holds the value of the comments edge.
 	Comments []*Comment `json:"comments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -60,10 +64,19 @@ func (e PostEdges) OwnerOrErr() ([]*User, error) {
 	return nil, &NotLoadedError{edge: "owner"}
 }
 
+// CommunityOrErr returns the Community value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) CommunityOrErr() ([]*Community, error) {
+	if e.loadedTypes[1] {
+		return e.Community, nil
+	}
+	return nil, &NotLoadedError{edge: "community"}
+}
+
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) TagsOrErr() ([]*Tag, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
@@ -72,7 +85,7 @@ func (e PostEdges) TagsOrErr() ([]*Tag, error) {
 // CommentsOrErr returns the Comments value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) CommentsOrErr() ([]*Comment, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Comments, nil
 	}
 	return nil, &NotLoadedError{edge: "comments"}
@@ -89,7 +102,7 @@ func (*Post) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(enums.PostType)
 		case post.FieldID, post.FieldUpVotes, post.FieldDownVotes:
 			values[i] = new(sql.NullInt64)
-		case post.FieldTitle, post.FieldContent:
+		case post.FieldTitle, post.FieldSlug, post.FieldContent:
 			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -132,6 +145,12 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				po.Title = value.String
 			}
+		case post.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				po.Slug = value.String
+			}
 		case post.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
@@ -170,6 +189,11 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 // QueryOwner queries the "owner" edge of the Post entity.
 func (po *Post) QueryOwner() *UserQuery {
 	return (&PostClient{config: po.config}).QueryOwner(po)
+}
+
+// QueryCommunity queries the "community" edge of the Post entity.
+func (po *Post) QueryCommunity() *CommunityQuery {
+	return (&PostClient{config: po.config}).QueryCommunity(po)
 }
 
 // QueryTags queries the "tags" edge of the Post entity.
@@ -211,6 +235,8 @@ func (po *Post) String() string {
 	builder.WriteString(po.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", title=")
 	builder.WriteString(po.Title)
+	builder.WriteString(", slug=")
+	builder.WriteString(po.Slug)
 	builder.WriteString(", content=")
 	builder.WriteString(po.Content)
 	builder.WriteString(", type=")

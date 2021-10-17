@@ -859,12 +859,19 @@ type CommunityMutation struct {
 	created_at    *time.Time
 	updated_at    *time.Time
 	name          *string
+	slug          *string
 	_type         *enums.CommunityType
 	is_adult      *bool
 	clearedFields map[string]struct{}
 	users         map[uint64]struct{}
 	removedusers  map[uint64]struct{}
 	clearedusers  bool
+	admins        map[uint64]struct{}
+	removedadmins map[uint64]struct{}
+	clearedadmins bool
+	posts         map[uint64]struct{}
+	removedposts  map[uint64]struct{}
+	clearedposts  bool
 	done          bool
 	oldValue      func(context.Context) (*Community, error)
 	predicates    []predicate.Community
@@ -1063,6 +1070,42 @@ func (m *CommunityMutation) ResetName() {
 	m.name = nil
 }
 
+// SetSlug sets the "slug" field.
+func (m *CommunityMutation) SetSlug(s string) {
+	m.slug = &s
+}
+
+// Slug returns the value of the "slug" field in the mutation.
+func (m *CommunityMutation) Slug() (r string, exists bool) {
+	v := m.slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlug returns the old "slug" field's value of the Community entity.
+// If the Community object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CommunityMutation) OldSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+	}
+	return oldValue.Slug, nil
+}
+
+// ResetSlug resets all changes to the "slug" field.
+func (m *CommunityMutation) ResetSlug() {
+	m.slug = nil
+}
+
 // SetType sets the "type" field.
 func (m *CommunityMutation) SetType(et enums.CommunityType) {
 	m._type = &et
@@ -1189,6 +1232,114 @@ func (m *CommunityMutation) ResetUsers() {
 	m.removedusers = nil
 }
 
+// AddAdminIDs adds the "admins" edge to the User entity by ids.
+func (m *CommunityMutation) AddAdminIDs(ids ...uint64) {
+	if m.admins == nil {
+		m.admins = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		m.admins[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAdmins clears the "admins" edge to the User entity.
+func (m *CommunityMutation) ClearAdmins() {
+	m.clearedadmins = true
+}
+
+// AdminsCleared reports if the "admins" edge to the User entity was cleared.
+func (m *CommunityMutation) AdminsCleared() bool {
+	return m.clearedadmins
+}
+
+// RemoveAdminIDs removes the "admins" edge to the User entity by IDs.
+func (m *CommunityMutation) RemoveAdminIDs(ids ...uint64) {
+	if m.removedadmins == nil {
+		m.removedadmins = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		delete(m.admins, ids[i])
+		m.removedadmins[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAdmins returns the removed IDs of the "admins" edge to the User entity.
+func (m *CommunityMutation) RemovedAdminsIDs() (ids []uint64) {
+	for id := range m.removedadmins {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AdminsIDs returns the "admins" edge IDs in the mutation.
+func (m *CommunityMutation) AdminsIDs() (ids []uint64) {
+	for id := range m.admins {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAdmins resets all changes to the "admins" edge.
+func (m *CommunityMutation) ResetAdmins() {
+	m.admins = nil
+	m.clearedadmins = false
+	m.removedadmins = nil
+}
+
+// AddPostIDs adds the "posts" edge to the Post entity by ids.
+func (m *CommunityMutation) AddPostIDs(ids ...uint64) {
+	if m.posts == nil {
+		m.posts = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		m.posts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPosts clears the "posts" edge to the Post entity.
+func (m *CommunityMutation) ClearPosts() {
+	m.clearedposts = true
+}
+
+// PostsCleared reports if the "posts" edge to the Post entity was cleared.
+func (m *CommunityMutation) PostsCleared() bool {
+	return m.clearedposts
+}
+
+// RemovePostIDs removes the "posts" edge to the Post entity by IDs.
+func (m *CommunityMutation) RemovePostIDs(ids ...uint64) {
+	if m.removedposts == nil {
+		m.removedposts = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		delete(m.posts, ids[i])
+		m.removedposts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPosts returns the removed IDs of the "posts" edge to the Post entity.
+func (m *CommunityMutation) RemovedPostsIDs() (ids []uint64) {
+	for id := range m.removedposts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PostsIDs returns the "posts" edge IDs in the mutation.
+func (m *CommunityMutation) PostsIDs() (ids []uint64) {
+	for id := range m.posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPosts resets all changes to the "posts" edge.
+func (m *CommunityMutation) ResetPosts() {
+	m.posts = nil
+	m.clearedposts = false
+	m.removedposts = nil
+}
+
 // Where appends a list predicates to the CommunityMutation builder.
 func (m *CommunityMutation) Where(ps ...predicate.Community) {
 	m.predicates = append(m.predicates, ps...)
@@ -1208,7 +1359,7 @@ func (m *CommunityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CommunityMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, community.FieldCreatedAt)
 	}
@@ -1217,6 +1368,9 @@ func (m *CommunityMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, community.FieldName)
+	}
+	if m.slug != nil {
+		fields = append(fields, community.FieldSlug)
 	}
 	if m._type != nil {
 		fields = append(fields, community.FieldType)
@@ -1238,6 +1392,8 @@ func (m *CommunityMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case community.FieldName:
 		return m.Name()
+	case community.FieldSlug:
+		return m.Slug()
 	case community.FieldType:
 		return m.GetType()
 	case community.FieldIsAdult:
@@ -1257,6 +1413,8 @@ func (m *CommunityMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case community.FieldName:
 		return m.OldName(ctx)
+	case community.FieldSlug:
+		return m.OldSlug(ctx)
 	case community.FieldType:
 		return m.OldType(ctx)
 	case community.FieldIsAdult:
@@ -1290,6 +1448,13 @@ func (m *CommunityMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case community.FieldSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlug(v)
 		return nil
 	case community.FieldType:
 		v, ok := value.(enums.CommunityType)
@@ -1363,6 +1528,9 @@ func (m *CommunityMutation) ResetField(name string) error {
 	case community.FieldName:
 		m.ResetName()
 		return nil
+	case community.FieldSlug:
+		m.ResetSlug()
+		return nil
 	case community.FieldType:
 		m.ResetType()
 		return nil
@@ -1375,9 +1543,15 @@ func (m *CommunityMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CommunityMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.users != nil {
 		edges = append(edges, community.EdgeUsers)
+	}
+	if m.admins != nil {
+		edges = append(edges, community.EdgeAdmins)
+	}
+	if m.posts != nil {
+		edges = append(edges, community.EdgePosts)
 	}
 	return edges
 }
@@ -1392,15 +1566,33 @@ func (m *CommunityMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case community.EdgeAdmins:
+		ids := make([]ent.Value, 0, len(m.admins))
+		for id := range m.admins {
+			ids = append(ids, id)
+		}
+		return ids
+	case community.EdgePosts:
+		ids := make([]ent.Value, 0, len(m.posts))
+		for id := range m.posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CommunityMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.removedusers != nil {
 		edges = append(edges, community.EdgeUsers)
+	}
+	if m.removedadmins != nil {
+		edges = append(edges, community.EdgeAdmins)
+	}
+	if m.removedposts != nil {
+		edges = append(edges, community.EdgePosts)
 	}
 	return edges
 }
@@ -1415,15 +1607,33 @@ func (m *CommunityMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case community.EdgeAdmins:
+		ids := make([]ent.Value, 0, len(m.removedadmins))
+		for id := range m.removedadmins {
+			ids = append(ids, id)
+		}
+		return ids
+	case community.EdgePosts:
+		ids := make([]ent.Value, 0, len(m.removedposts))
+		for id := range m.removedposts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CommunityMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.clearedusers {
 		edges = append(edges, community.EdgeUsers)
+	}
+	if m.clearedadmins {
+		edges = append(edges, community.EdgeAdmins)
+	}
+	if m.clearedposts {
+		edges = append(edges, community.EdgePosts)
 	}
 	return edges
 }
@@ -1434,6 +1644,10 @@ func (m *CommunityMutation) EdgeCleared(name string) bool {
 	switch name {
 	case community.EdgeUsers:
 		return m.clearedusers
+	case community.EdgeAdmins:
+		return m.clearedadmins
+	case community.EdgePosts:
+		return m.clearedposts
 	}
 	return false
 }
@@ -1452,6 +1666,12 @@ func (m *CommunityMutation) ResetEdge(name string) error {
 	switch name {
 	case community.EdgeUsers:
 		m.ResetUsers()
+		return nil
+	case community.EdgeAdmins:
+		m.ResetAdmins()
+		return nil
+	case community.EdgePosts:
+		m.ResetPosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Community edge %s", name)
@@ -1920,32 +2140,36 @@ func (m *MediaMutation) ResetEdge(name string) error {
 // PostMutation represents an operation that mutates the Post nodes in the graph.
 type PostMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uint64
-	created_at      *time.Time
-	updated_at      *time.Time
-	title           *string
-	content         *string
-	_type           *enums.PostType
-	content_mode    *enums.InputContentMode
-	up_votes        *int
-	addup_votes     *int
-	down_votes      *int
-	adddown_votes   *int
-	clearedFields   map[string]struct{}
-	owner           map[uint64]struct{}
-	removedowner    map[uint64]struct{}
-	clearedowner    bool
-	tags            map[uint64]struct{}
-	removedtags     map[uint64]struct{}
-	clearedtags     bool
-	comments        map[uint64]struct{}
-	removedcomments map[uint64]struct{}
-	clearedcomments bool
-	done            bool
-	oldValue        func(context.Context) (*Post, error)
-	predicates      []predicate.Post
+	op               Op
+	typ              string
+	id               *uint64
+	created_at       *time.Time
+	updated_at       *time.Time
+	title            *string
+	slug             *string
+	content          *string
+	_type            *enums.PostType
+	content_mode     *enums.InputContentMode
+	up_votes         *int
+	addup_votes      *int
+	down_votes       *int
+	adddown_votes    *int
+	clearedFields    map[string]struct{}
+	owner            map[uint64]struct{}
+	removedowner     map[uint64]struct{}
+	clearedowner     bool
+	community        map[uint64]struct{}
+	removedcommunity map[uint64]struct{}
+	clearedcommunity bool
+	tags             map[uint64]struct{}
+	removedtags      map[uint64]struct{}
+	clearedtags      bool
+	comments         map[uint64]struct{}
+	removedcomments  map[uint64]struct{}
+	clearedcomments  bool
+	done             bool
+	oldValue         func(context.Context) (*Post, error)
+	predicates       []predicate.Post
 }
 
 var _ ent.Mutation = (*PostMutation)(nil)
@@ -2139,6 +2363,42 @@ func (m *PostMutation) OldTitle(ctx context.Context) (v string, err error) {
 // ResetTitle resets all changes to the "title" field.
 func (m *PostMutation) ResetTitle() {
 	m.title = nil
+}
+
+// SetSlug sets the "slug" field.
+func (m *PostMutation) SetSlug(s string) {
+	m.slug = &s
+}
+
+// Slug returns the value of the "slug" field in the mutation.
+func (m *PostMutation) Slug() (r string, exists bool) {
+	v := m.slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlug returns the old "slug" field's value of the Post entity.
+// If the Post object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostMutation) OldSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+	}
+	return oldValue.Slug, nil
+}
+
+// ResetSlug resets all changes to the "slug" field.
+func (m *PostMutation) ResetSlug() {
+	m.slug = nil
 }
 
 // SetContent sets the "content" field.
@@ -2415,6 +2675,60 @@ func (m *PostMutation) ResetOwner() {
 	m.removedowner = nil
 }
 
+// AddCommunityIDs adds the "community" edge to the Community entity by ids.
+func (m *PostMutation) AddCommunityIDs(ids ...uint64) {
+	if m.community == nil {
+		m.community = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		m.community[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCommunity clears the "community" edge to the Community entity.
+func (m *PostMutation) ClearCommunity() {
+	m.clearedcommunity = true
+}
+
+// CommunityCleared reports if the "community" edge to the Community entity was cleared.
+func (m *PostMutation) CommunityCleared() bool {
+	return m.clearedcommunity
+}
+
+// RemoveCommunityIDs removes the "community" edge to the Community entity by IDs.
+func (m *PostMutation) RemoveCommunityIDs(ids ...uint64) {
+	if m.removedcommunity == nil {
+		m.removedcommunity = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		delete(m.community, ids[i])
+		m.removedcommunity[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCommunity returns the removed IDs of the "community" edge to the Community entity.
+func (m *PostMutation) RemovedCommunityIDs() (ids []uint64) {
+	for id := range m.removedcommunity {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CommunityIDs returns the "community" edge IDs in the mutation.
+func (m *PostMutation) CommunityIDs() (ids []uint64) {
+	for id := range m.community {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCommunity resets all changes to the "community" edge.
+func (m *PostMutation) ResetCommunity() {
+	m.community = nil
+	m.clearedcommunity = false
+	m.removedcommunity = nil
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *PostMutation) AddTagIDs(ids ...uint64) {
 	if m.tags == nil {
@@ -2542,7 +2856,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, post.FieldCreatedAt)
 	}
@@ -2551,6 +2865,9 @@ func (m *PostMutation) Fields() []string {
 	}
 	if m.title != nil {
 		fields = append(fields, post.FieldTitle)
+	}
+	if m.slug != nil {
+		fields = append(fields, post.FieldSlug)
 	}
 	if m.content != nil {
 		fields = append(fields, post.FieldContent)
@@ -2581,6 +2898,8 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case post.FieldTitle:
 		return m.Title()
+	case post.FieldSlug:
+		return m.Slug()
 	case post.FieldContent:
 		return m.Content()
 	case post.FieldType:
@@ -2606,6 +2925,8 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUpdatedAt(ctx)
 	case post.FieldTitle:
 		return m.OldTitle(ctx)
+	case post.FieldSlug:
+		return m.OldSlug(ctx)
 	case post.FieldContent:
 		return m.OldContent(ctx)
 	case post.FieldType:
@@ -2645,6 +2966,13 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTitle(v)
+		return nil
+	case post.FieldSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlug(v)
 		return nil
 	case post.FieldContent:
 		v, ok := value.(string)
@@ -2766,6 +3094,9 @@ func (m *PostMutation) ResetField(name string) error {
 	case post.FieldTitle:
 		m.ResetTitle()
 		return nil
+	case post.FieldSlug:
+		m.ResetSlug()
+		return nil
 	case post.FieldContent:
 		m.ResetContent()
 		return nil
@@ -2787,9 +3118,12 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.owner != nil {
 		edges = append(edges, post.EdgeOwner)
+	}
+	if m.community != nil {
+		edges = append(edges, post.EdgeCommunity)
 	}
 	if m.tags != nil {
 		edges = append(edges, post.EdgeTags)
@@ -2807,6 +3141,12 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 	case post.EdgeOwner:
 		ids := make([]ent.Value, 0, len(m.owner))
 		for id := range m.owner {
+			ids = append(ids, id)
+		}
+		return ids
+	case post.EdgeCommunity:
+		ids := make([]ent.Value, 0, len(m.community))
+		for id := range m.community {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2828,9 +3168,12 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedowner != nil {
 		edges = append(edges, post.EdgeOwner)
+	}
+	if m.removedcommunity != nil {
+		edges = append(edges, post.EdgeCommunity)
 	}
 	if m.removedtags != nil {
 		edges = append(edges, post.EdgeTags)
@@ -2848,6 +3191,12 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 	case post.EdgeOwner:
 		ids := make([]ent.Value, 0, len(m.removedowner))
 		for id := range m.removedowner {
+			ids = append(ids, id)
+		}
+		return ids
+	case post.EdgeCommunity:
+		ids := make([]ent.Value, 0, len(m.removedcommunity))
+		for id := range m.removedcommunity {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2869,9 +3218,12 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedowner {
 		edges = append(edges, post.EdgeOwner)
+	}
+	if m.clearedcommunity {
+		edges = append(edges, post.EdgeCommunity)
 	}
 	if m.clearedtags {
 		edges = append(edges, post.EdgeTags)
@@ -2888,6 +3240,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 	switch name {
 	case post.EdgeOwner:
 		return m.clearedowner
+	case post.EdgeCommunity:
+		return m.clearedcommunity
 	case post.EdgeTags:
 		return m.clearedtags
 	case post.EdgeComments:
@@ -2910,6 +3264,9 @@ func (m *PostMutation) ResetEdge(name string) error {
 	switch name {
 	case post.EdgeOwner:
 		m.ResetOwner()
+		return nil
+	case post.EdgeCommunity:
+		m.ResetCommunity()
 		return nil
 	case post.EdgeTags:
 		m.ResetTags()
@@ -3423,28 +3780,31 @@ func (m *TagMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uint64
-	created_at         *time.Time
-	updated_at         *time.Time
-	username           *string
-	email              *string
-	avatar_url         *string
-	password           *string
-	clearedFields      map[string]struct{}
-	communities        map[uint64]struct{}
-	removedcommunities map[uint64]struct{}
-	clearedcommunities bool
-	posts              map[uint64]struct{}
-	removedposts       map[uint64]struct{}
-	clearedposts       bool
-	comments           map[uint64]struct{}
-	removedcomments    map[uint64]struct{}
-	clearedcomments    bool
-	done               bool
-	oldValue           func(context.Context) (*User, error)
-	predicates         []predicate.User
+	op                    Op
+	typ                   string
+	id                    *uint64
+	created_at            *time.Time
+	updated_at            *time.Time
+	username              *string
+	email                 *string
+	avatar_url            *string
+	password              *string
+	clearedFields         map[string]struct{}
+	communities           map[uint64]struct{}
+	removedcommunities    map[uint64]struct{}
+	clearedcommunities    bool
+	my_communities        map[uint64]struct{}
+	removedmy_communities map[uint64]struct{}
+	clearedmy_communities bool
+	posts                 map[uint64]struct{}
+	removedposts          map[uint64]struct{}
+	clearedposts          bool
+	comments              map[uint64]struct{}
+	removedcomments       map[uint64]struct{}
+	clearedcomments       bool
+	done                  bool
+	oldValue              func(context.Context) (*User, error)
+	predicates            []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -3828,6 +4188,60 @@ func (m *UserMutation) ResetCommunities() {
 	m.removedcommunities = nil
 }
 
+// AddMyCommunityIDs adds the "my_communities" edge to the Community entity by ids.
+func (m *UserMutation) AddMyCommunityIDs(ids ...uint64) {
+	if m.my_communities == nil {
+		m.my_communities = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		m.my_communities[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMyCommunities clears the "my_communities" edge to the Community entity.
+func (m *UserMutation) ClearMyCommunities() {
+	m.clearedmy_communities = true
+}
+
+// MyCommunitiesCleared reports if the "my_communities" edge to the Community entity was cleared.
+func (m *UserMutation) MyCommunitiesCleared() bool {
+	return m.clearedmy_communities
+}
+
+// RemoveMyCommunityIDs removes the "my_communities" edge to the Community entity by IDs.
+func (m *UserMutation) RemoveMyCommunityIDs(ids ...uint64) {
+	if m.removedmy_communities == nil {
+		m.removedmy_communities = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		delete(m.my_communities, ids[i])
+		m.removedmy_communities[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMyCommunities returns the removed IDs of the "my_communities" edge to the Community entity.
+func (m *UserMutation) RemovedMyCommunitiesIDs() (ids []uint64) {
+	for id := range m.removedmy_communities {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MyCommunitiesIDs returns the "my_communities" edge IDs in the mutation.
+func (m *UserMutation) MyCommunitiesIDs() (ids []uint64) {
+	for id := range m.my_communities {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMyCommunities resets all changes to the "my_communities" edge.
+func (m *UserMutation) ResetMyCommunities() {
+	m.my_communities = nil
+	m.clearedmy_communities = false
+	m.removedmy_communities = nil
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by ids.
 func (m *UserMutation) AddPostIDs(ids ...uint64) {
 	if m.posts == nil {
@@ -4154,9 +4568,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.communities != nil {
 		edges = append(edges, user.EdgeCommunities)
+	}
+	if m.my_communities != nil {
+		edges = append(edges, user.EdgeMyCommunities)
 	}
 	if m.posts != nil {
 		edges = append(edges, user.EdgePosts)
@@ -4174,6 +4591,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	case user.EdgeCommunities:
 		ids := make([]ent.Value, 0, len(m.communities))
 		for id := range m.communities {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeMyCommunities:
+		ids := make([]ent.Value, 0, len(m.my_communities))
+		for id := range m.my_communities {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4195,9 +4618,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedcommunities != nil {
 		edges = append(edges, user.EdgeCommunities)
+	}
+	if m.removedmy_communities != nil {
+		edges = append(edges, user.EdgeMyCommunities)
 	}
 	if m.removedposts != nil {
 		edges = append(edges, user.EdgePosts)
@@ -4215,6 +4641,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	case user.EdgeCommunities:
 		ids := make([]ent.Value, 0, len(m.removedcommunities))
 		for id := range m.removedcommunities {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeMyCommunities:
+		ids := make([]ent.Value, 0, len(m.removedmy_communities))
+		for id := range m.removedmy_communities {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4236,9 +4668,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcommunities {
 		edges = append(edges, user.EdgeCommunities)
+	}
+	if m.clearedmy_communities {
+		edges = append(edges, user.EdgeMyCommunities)
 	}
 	if m.clearedposts {
 		edges = append(edges, user.EdgePosts)
@@ -4255,6 +4690,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeCommunities:
 		return m.clearedcommunities
+	case user.EdgeMyCommunities:
+		return m.clearedmy_communities
 	case user.EdgePosts:
 		return m.clearedposts
 	case user.EdgeComments:
@@ -4277,6 +4714,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeCommunities:
 		m.ResetCommunities()
+		return nil
+	case user.EdgeMyCommunities:
+		m.ResetMyCommunities()
 		return nil
 	case user.EdgePosts:
 		m.ResetPosts()

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
+	"github.com/ducnguyen96/reddit-clone/ent/post"
 	"github.com/ducnguyen96/reddit-clone/ent/schema/enums"
 	"github.com/ducnguyen96/reddit-clone/ent/user"
 )
@@ -56,6 +57,12 @@ func (cc *CommunityCreate) SetName(s string) *CommunityCreate {
 	return cc
 }
 
+// SetSlug sets the "slug" field.
+func (cc *CommunityCreate) SetSlug(s string) *CommunityCreate {
+	cc.mutation.SetSlug(s)
+	return cc
+}
+
 // SetType sets the "type" field.
 func (cc *CommunityCreate) SetType(et enums.CommunityType) *CommunityCreate {
 	cc.mutation.SetType(et)
@@ -95,6 +102,36 @@ func (cc *CommunityCreate) AddUsers(u ...*User) *CommunityCreate {
 		ids[i] = u[i].ID
 	}
 	return cc.AddUserIDs(ids...)
+}
+
+// AddAdminIDs adds the "admins" edge to the User entity by IDs.
+func (cc *CommunityCreate) AddAdminIDs(ids ...uint64) *CommunityCreate {
+	cc.mutation.AddAdminIDs(ids...)
+	return cc
+}
+
+// AddAdmins adds the "admins" edges to the User entity.
+func (cc *CommunityCreate) AddAdmins(u ...*User) *CommunityCreate {
+	ids := make([]uint64, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cc.AddAdminIDs(ids...)
+}
+
+// AddPostIDs adds the "posts" edge to the Post entity by IDs.
+func (cc *CommunityCreate) AddPostIDs(ids ...uint64) *CommunityCreate {
+	cc.mutation.AddPostIDs(ids...)
+	return cc
+}
+
+// AddPosts adds the "posts" edges to the Post entity.
+func (cc *CommunityCreate) AddPosts(p ...*Post) *CommunityCreate {
+	ids := make([]uint64, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cc.AddPostIDs(ids...)
 }
 
 // Mutation returns the CommunityMutation object of the builder.
@@ -207,6 +244,14 @@ func (cc *CommunityCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "name": %w`, err)}
 		}
 	}
+	if _, ok := cc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "slug"`)}
+	}
+	if v, ok := cc.mutation.Slug(); ok {
+		if err := community.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "slug": %w`, err)}
+		}
+	}
 	if _, ok := cc.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "type"`)}
 	}
@@ -217,6 +262,9 @@ func (cc *CommunityCreate) check() error {
 	}
 	if _, ok := cc.mutation.IsAdult(); !ok {
 		return &ValidationError{Name: "is_adult", err: errors.New(`ent: missing required field "is_adult"`)}
+	}
+	if len(cc.mutation.AdminsIDs()) == 0 {
+		return &ValidationError{Name: "admins", err: errors.New("ent: missing required edge \"admins\"")}
 	}
 	return nil
 }
@@ -275,6 +323,14 @@ func (cc *CommunityCreate) createSpec() (*Community, *sqlgraph.CreateSpec) {
 		})
 		_node.Name = value
 	}
+	if value, ok := cc.mutation.Slug(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: community.FieldSlug,
+		})
+		_node.Slug = value
+	}
 	if value, ok := cc.mutation.GetType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -302,6 +358,44 @@ func (cc *CommunityCreate) createSpec() (*Community, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.AdminsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   community.AdminsTable,
+			Columns: community.AdminsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.PostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   community.PostsTable,
+			Columns: community.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: post.FieldID,
 				},
 			},
 		}

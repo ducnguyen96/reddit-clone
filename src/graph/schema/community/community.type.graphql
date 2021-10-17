@@ -1,0 +1,21 @@
+type Community {
+    id: ID!
+    name: String!
+    slug: String!
+    type: CommunityType!
+    isAdult: Boolean!
+    createdAt: String!
+    updatedAt: String!
+}
+
+enum CommunityType {
+    Public
+    Restricted
+    Private
+}
+
+type CommunityPagination {
+    length: Int!
+    currentPage: Int!
+    communities: [Community!]!
+}

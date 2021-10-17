@@ -29,7 +29,8 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Size: 150},
+		{Name: "name", Type: field.TypeString, Size: 300},
+		{Name: "slug", Type: field.TypeString, Unique: true, Size: 300},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"Public", "Restricted", "Private"}},
 		{Name: "is_adult", Type: field.TypeBool, Default: false},
 	}
@@ -58,7 +59,8 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "title", Type: field.TypeString, Size: 300},
+		{Name: "title", Type: field.TypeString, Unique: true, Size: 300},
+		{Name: "slug", Type: field.TypeString, Unique: true, Size: 400},
 		{Name: "content", Type: field.TypeString},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"Post", "Image_Video", "Link"}},
 		{Name: "content_mode", Type: field.TypeEnum, Enums: []string{"MarkDown", "TextEditor"}},
@@ -121,6 +123,56 @@ var (
 				Symbol:     "community_users_user_id",
 				Columns:    []*schema.Column{CommunityUsersColumns[1]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// CommunityAdminsColumns holds the columns for the "community_admins" table.
+	CommunityAdminsColumns = []*schema.Column{
+		{Name: "community_id", Type: field.TypeUint64},
+		{Name: "user_id", Type: field.TypeUint64},
+	}
+	// CommunityAdminsTable holds the schema information for the "community_admins" table.
+	CommunityAdminsTable = &schema.Table{
+		Name:       "community_admins",
+		Columns:    CommunityAdminsColumns,
+		PrimaryKey: []*schema.Column{CommunityAdminsColumns[0], CommunityAdminsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "community_admins_community_id",
+				Columns:    []*schema.Column{CommunityAdminsColumns[0]},
+				RefColumns: []*schema.Column{CommunitiesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "community_admins_user_id",
+				Columns:    []*schema.Column{CommunityAdminsColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// CommunityPostsColumns holds the columns for the "community_posts" table.
+	CommunityPostsColumns = []*schema.Column{
+		{Name: "community_id", Type: field.TypeUint64},
+		{Name: "post_id", Type: field.TypeUint64},
+	}
+	// CommunityPostsTable holds the schema information for the "community_posts" table.
+	CommunityPostsTable = &schema.Table{
+		Name:       "community_posts",
+		Columns:    CommunityPostsColumns,
+		PrimaryKey: []*schema.Column{CommunityPostsColumns[0], CommunityPostsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "community_posts_community_id",
+				Columns:    []*schema.Column{CommunityPostsColumns[0]},
+				RefColumns: []*schema.Column{CommunitiesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "community_posts_post_id",
+				Columns:    []*schema.Column{CommunityPostsColumns[1]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -234,6 +286,8 @@ var (
 		TagsTable,
 		UsersTable,
 		CommunityUsersTable,
+		CommunityAdminsTable,
+		CommunityPostsTable,
 		PostTagsTable,
 		PostCommentsTable,
 		UserPostsTable,
@@ -244,6 +298,10 @@ var (
 func init() {
 	CommunityUsersTable.ForeignKeys[0].RefTable = CommunitiesTable
 	CommunityUsersTable.ForeignKeys[1].RefTable = UsersTable
+	CommunityAdminsTable.ForeignKeys[0].RefTable = CommunitiesTable
+	CommunityAdminsTable.ForeignKeys[1].RefTable = UsersTable
+	CommunityPostsTable.ForeignKeys[0].RefTable = CommunitiesTable
+	CommunityPostsTable.ForeignKeys[1].RefTable = PostsTable
 	PostTagsTable.ForeignKeys[0].RefTable = PostsTable
 	PostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	PostCommentsTable.ForeignKeys[0].RefTable = PostsTable

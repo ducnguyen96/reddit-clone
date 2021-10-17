@@ -250,6 +250,12 @@ func (cc *CommentCreate) check() error {
 	if _, ok := cc.mutation.DownVotes(); !ok {
 		return &ValidationError{Name: "down_votes", err: errors.New(`ent: missing required field "down_votes"`)}
 	}
+	if len(cc.mutation.PostsIDs()) == 0 {
+		return &ValidationError{Name: "posts", err: errors.New("ent: missing required edge \"posts\"")}
+	}
+	if len(cc.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New("ent: missing required edge \"user\"")}
+	}
 	return nil
 }
 

@@ -21,6 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
 	// FieldType holds the string denoting the type field in the database.
@@ -33,6 +35,8 @@ const (
 	FieldDownVotes = "down_votes"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
+	// EdgeCommunity holds the string denoting the community edge name in mutations.
+	EdgeCommunity = "community"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeComments holds the string denoting the comments edge name in mutations.
@@ -44,6 +48,11 @@ const (
 	// OwnerInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	OwnerInverseTable = "users"
+	// CommunityTable is the table that holds the community relation/edge. The primary key declared below.
+	CommunityTable = "community_posts"
+	// CommunityInverseTable is the table name for the Community entity.
+	// It exists in this package in order to avoid circular dependency with the "community" package.
+	CommunityInverseTable = "communities"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
 	TagsTable = "post_tags"
 	// TagsInverseTable is the table name for the Tag entity.
@@ -62,6 +71,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldTitle,
+	FieldSlug,
 	FieldContent,
 	FieldType,
 	FieldContentMode,
@@ -73,6 +83,9 @@ var (
 	// OwnerPrimaryKey and OwnerColumn2 are the table columns denoting the
 	// primary key for the owner relation (M2M).
 	OwnerPrimaryKey = []string{"user_id", "post_id"}
+	// CommunityPrimaryKey and CommunityColumn2 are the table columns denoting the
+	// primary key for the community relation (M2M).
+	CommunityPrimaryKey = []string{"community_id", "post_id"}
 	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
 	// primary key for the tags relation (M2M).
 	TagsPrimaryKey = []string{"post_id", "tag_id"}
@@ -107,6 +120,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
+	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	SlugValidator func(string) error
 	// DefaultUpVotes holds the default value on creation for the "up_votes" field.
 	DefaultUpVotes int
 	// DefaultDownVotes holds the default value on creation for the "down_votes" field.

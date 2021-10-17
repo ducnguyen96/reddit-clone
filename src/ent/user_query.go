@@ -29,9 +29,10 @@ type UserQuery struct {
 	fields     []string
 	predicates []predicate.User
 	// eager-loading edges.
-	withCommunities *CommunityQuery
-	withPosts       *PostQuery
-	withComments    *CommentQuery
+	withCommunities   *CommunityQuery
+	withMyCommunities *CommunityQuery
+	withPosts         *PostQuery
+	withComments      *CommentQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -83,6 +84,28 @@ func (uq *UserQuery) QueryCommunities() *CommunityQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(community.Table, community.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.CommunitiesTable, user.CommunitiesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMyCommunities chains the current query on the "my_communities" edge.
+func (uq *UserQuery) QueryMyCommunities() *CommunityQuery {
+	query := &CommunityQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(community.Table, community.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.MyCommunitiesTable, user.MyCommunitiesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -310,14 +333,15 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:          uq.config,
-		limit:           uq.limit,
-		offset:          uq.offset,
-		order:           append([]OrderFunc{}, uq.order...),
-		predicates:      append([]predicate.User{}, uq.predicates...),
-		withCommunities: uq.withCommunities.Clone(),
-		withPosts:       uq.withPosts.Clone(),
-		withComments:    uq.withComments.Clone(),
+		config:            uq.config,
+		limit:             uq.limit,
+		offset:            uq.offset,
+		order:             append([]OrderFunc{}, uq.order...),
+		predicates:        append([]predicate.User{}, uq.predicates...),
+		withCommunities:   uq.withCommunities.Clone(),
+		withMyCommunities: uq.withMyCommunities.Clone(),
+		withPosts:         uq.withPosts.Clone(),
+		withComments:      uq.withComments.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -332,6 +356,17 @@ func (uq *UserQuery) WithCommunities(opts ...func(*CommunityQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withCommunities = query
+	return uq
+}
+
+// WithMyCommunities tells the query-builder to eager-load the nodes that are connected to
+// the "my_communities" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithMyCommunities(opts ...func(*CommunityQuery)) *UserQuery {
+	query := &CommunityQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withMyCommunities = query
 	return uq
 }
 
@@ -422,8 +457,9 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			uq.withCommunities != nil,
+			uq.withMyCommunities != nil,
 			uq.withPosts != nil,
 			uq.withComments != nil,
 		}
@@ -509,6 +545,71 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Communities = append(nodes[i].Edges.Communities, n)
+			}
+		}
+	}
+
+	if query := uq.withMyCommunities; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[uint64]*User, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.MyCommunities = []*Community{}
+		}
+		var (
+			edgeids []uint64
+			edges   = make(map[uint64][]*User)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   user.MyCommunitiesTable,
+				Columns: user.MyCommunitiesPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(user.MyCommunitiesPrimaryKey[1], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := uint64(eout.Int64)
+				inValue := uint64(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, uq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "my_communities": %w`, err)
+		}
+		query.Where(community.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "my_communities" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.MyCommunities = append(nodes[i].Edges.MyCommunities, n)
 			}
 		}
 	}

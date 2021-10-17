@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
+	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/post"
 	"github.com/ducnguyen96/reddit-clone/ent/schema/enums"
 	"github.com/ducnguyen96/reddit-clone/ent/tag"
@@ -55,6 +56,12 @@ func (pc *PostCreate) SetNillableUpdatedAt(t *time.Time) *PostCreate {
 // SetTitle sets the "title" field.
 func (pc *PostCreate) SetTitle(s string) *PostCreate {
 	pc.mutation.SetTitle(s)
+	return pc
+}
+
+// SetSlug sets the "slug" field.
+func (pc *PostCreate) SetSlug(s string) *PostCreate {
+	pc.mutation.SetSlug(s)
 	return pc
 }
 
@@ -123,6 +130,21 @@ func (pc *PostCreate) AddOwner(u ...*User) *PostCreate {
 		ids[i] = u[i].ID
 	}
 	return pc.AddOwnerIDs(ids...)
+}
+
+// AddCommunityIDs adds the "community" edge to the Community entity by IDs.
+func (pc *PostCreate) AddCommunityIDs(ids ...uint64) *PostCreate {
+	pc.mutation.AddCommunityIDs(ids...)
+	return pc
+}
+
+// AddCommunity adds the "community" edges to the Community entity.
+func (pc *PostCreate) AddCommunity(c ...*Community) *PostCreate {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return pc.AddCommunityIDs(ids...)
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
@@ -269,6 +291,14 @@ func (pc *PostCreate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
+	if _, ok := pc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "slug"`)}
+	}
+	if v, ok := pc.mutation.Slug(); ok {
+		if err := post.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "slug": %w`, err)}
+		}
+	}
 	if _, ok := pc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "content"`)}
 	}
@@ -293,6 +323,12 @@ func (pc *PostCreate) check() error {
 	}
 	if _, ok := pc.mutation.DownVotes(); !ok {
 		return &ValidationError{Name: "down_votes", err: errors.New(`ent: missing required field "down_votes"`)}
+	}
+	if len(pc.mutation.OwnerIDs()) == 0 {
+		return &ValidationError{Name: "owner", err: errors.New("ent: missing required edge \"owner\"")}
+	}
+	if len(pc.mutation.CommunityIDs()) == 0 {
+		return &ValidationError{Name: "community", err: errors.New("ent: missing required edge \"community\"")}
 	}
 	return nil
 }
@@ -351,6 +387,14 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		})
 		_node.Title = value
 	}
+	if value, ok := pc.mutation.Slug(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldSlug,
+		})
+		_node.Slug = value
+	}
 	if value, ok := pc.mutation.Content(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -402,6 +446,25 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.CommunityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
 				},
 			},
 		}

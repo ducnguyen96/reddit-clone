@@ -37,13 +37,15 @@ type User struct {
 type UserEdges struct {
 	// Communities holds the value of the communities edge.
 	Communities []*Community `json:"communities,omitempty"`
+	// MyCommunities holds the value of the my_communities edge.
+	MyCommunities []*Community `json:"my_communities,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
 	// Comments holds the value of the comments edge.
 	Comments []*Comment `json:"comments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CommunitiesOrErr returns the Communities value or an error if the edge
@@ -55,10 +57,19 @@ func (e UserEdges) CommunitiesOrErr() ([]*Community, error) {
 	return nil, &NotLoadedError{edge: "communities"}
 }
 
+// MyCommunitiesOrErr returns the MyCommunities value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) MyCommunitiesOrErr() ([]*Community, error) {
+	if e.loadedTypes[1] {
+		return e.MyCommunities, nil
+	}
+	return nil, &NotLoadedError{edge: "my_communities"}
+}
+
 // PostsOrErr returns the Posts value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PostsOrErr() ([]*Post, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
@@ -67,7 +78,7 @@ func (e UserEdges) PostsOrErr() ([]*Post, error) {
 // CommentsOrErr returns the Comments value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) CommentsOrErr() ([]*Comment, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Comments, nil
 	}
 	return nil, &NotLoadedError{edge: "comments"}
@@ -151,6 +162,11 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 // QueryCommunities queries the "communities" edge of the User entity.
 func (u *User) QueryCommunities() *CommunityQuery {
 	return (&UserClient{config: u.config}).QueryCommunities(u)
+}
+
+// QueryMyCommunities queries the "my_communities" edge of the User entity.
+func (u *User) QueryMyCommunities() *CommunityQuery {
+	return (&UserClient{config: u.config}).QueryMyCommunities(u)
 }
 
 // QueryPosts queries the "posts" edge of the User entity.

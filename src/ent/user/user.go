@@ -27,6 +27,8 @@ const (
 	FieldPassword = "password"
 	// EdgeCommunities holds the string denoting the communities edge name in mutations.
 	EdgeCommunities = "communities"
+	// EdgeMyCommunities holds the string denoting the my_communities edge name in mutations.
+	EdgeMyCommunities = "my_communities"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
 	// EdgeComments holds the string denoting the comments edge name in mutations.
@@ -38,6 +40,11 @@ const (
 	// CommunitiesInverseTable is the table name for the Community entity.
 	// It exists in this package in order to avoid circular dependency with the "community" package.
 	CommunitiesInverseTable = "communities"
+	// MyCommunitiesTable is the table that holds the my_communities relation/edge. The primary key declared below.
+	MyCommunitiesTable = "community_admins"
+	// MyCommunitiesInverseTable is the table name for the Community entity.
+	// It exists in this package in order to avoid circular dependency with the "community" package.
+	MyCommunitiesInverseTable = "communities"
 	// PostsTable is the table that holds the posts relation/edge. The primary key declared below.
 	PostsTable = "user_posts"
 	// PostsInverseTable is the table name for the Post entity.
@@ -65,6 +72,9 @@ var (
 	// CommunitiesPrimaryKey and CommunitiesColumn2 are the table columns denoting the
 	// primary key for the communities relation (M2M).
 	CommunitiesPrimaryKey = []string{"community_id", "user_id"}
+	// MyCommunitiesPrimaryKey and MyCommunitiesColumn2 are the table columns denoting the
+	// primary key for the my_communities relation (M2M).
+	MyCommunitiesPrimaryKey = []string{"community_id", "user_id"}
 	// PostsPrimaryKey and PostsColumn2 are the table columns denoting the
 	// primary key for the posts relation (M2M).
 	PostsPrimaryKey = []string{"user_id", "post_id"}

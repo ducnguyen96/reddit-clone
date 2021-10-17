@@ -9,9 +9,13 @@ import (
 	_ "github.com/ducnguyen96/reddit-clone/ent/runtime"
 	"github.com/ducnguyen96/reddit-clone/graph/directives"
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
+	"github.com/ducnguyen96/reddit-clone/graph/repositories/community_repository"
+	"github.com/ducnguyen96/reddit-clone/graph/repositories/post_repository"
 	"github.com/ducnguyen96/reddit-clone/graph/repositories/user_repository"
 	graph "github.com/ducnguyen96/reddit-clone/graph/resolver"
-	auth_services "github.com/ducnguyen96/reddit-clone/graph/services/auth_services"
+	"github.com/ducnguyen96/reddit-clone/graph/services/auth_services"
+	"github.com/ducnguyen96/reddit-clone/graph/services/community_services"
+	"github.com/ducnguyen96/reddit-clone/graph/services/post_services"
 	"github.com/ducnguyen96/reddit-clone/graph/services/user_services"
 	"github.com/ducnguyen96/reddit-clone/utils"
 	"github.com/gin-gonic/gin"
@@ -70,15 +74,21 @@ func main() {
 	})
 
 	// Repositories
-	userRepository := user_repository.NewUserRepository(readClient, readClient)
+	userRepo := user_repository.NewUserRepository(readClient, readClient)
+	communityRepo := community_repository.NewCommunityRepository(readClient, readClient)
+	postRepo := post_repository.NewPostRepository(readClient, readClient)
 
 	// Services
-	userService := user_services.NewUserService(userRepository)
+	userService := user_services.NewUserService(userRepo)
 	authService := auth_services.NewAuthService()
+	communityService := community_services.NewCommunityService(communityRepo)
+	postService := post_services.NewPostService(postRepo)
 
 	gr := generated.Config{Resolvers: &graph.Resolver{
 		UerService: userService,
 		AuthService: authService,
+		CommunityService: communityService,
+		PostService: postService,
 	}}
 
 	gr.Directives.Binding = directives.Binding

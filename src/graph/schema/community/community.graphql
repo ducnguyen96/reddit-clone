@@ -1,0 +1,8 @@
+extend type Query {
+    getCommunity(slug: String!): Community!
+    queryCommunity(input: QueryCommunityInput!): CommunityPagination!
+}
+
+extend type Mutation {
+    createCommunity(input: CreateCommunityInput!): Community!
+}

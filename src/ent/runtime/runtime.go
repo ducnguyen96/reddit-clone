@@ -79,8 +79,27 @@ func init() {
 			return nil
 		}
 	}()
+	// communityDescSlug is the schema descriptor for slug field.
+	communityDescSlug := communityFields[1].Descriptor()
+	// community.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	community.SlugValidator = func() func(string) error {
+		validators := communityDescSlug.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(slug string) error {
+			for _, fn := range fns {
+				if err := fn(slug); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// communityDescIsAdult is the schema descriptor for is_adult field.
-	communityDescIsAdult := communityFields[2].Descriptor()
+	communityDescIsAdult := communityFields[3].Descriptor()
 	// community.DefaultIsAdult holds the default value on creation for the is_adult field.
 	community.DefaultIsAdult = communityDescIsAdult.Default.(bool)
 	mediaMixin := schema.Media{}.Mixin()
@@ -136,12 +155,31 @@ func init() {
 			return nil
 		}
 	}()
+	// postDescSlug is the schema descriptor for slug field.
+	postDescSlug := postFields[1].Descriptor()
+	// post.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	post.SlugValidator = func() func(string) error {
+		validators := postDescSlug.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(slug string) error {
+			for _, fn := range fns {
+				if err := fn(slug); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// postDescUpVotes is the schema descriptor for up_votes field.
-	postDescUpVotes := postFields[4].Descriptor()
+	postDescUpVotes := postFields[5].Descriptor()
 	// post.DefaultUpVotes holds the default value on creation for the up_votes field.
 	post.DefaultUpVotes = postDescUpVotes.Default.(int)
 	// postDescDownVotes is the schema descriptor for down_votes field.
-	postDescDownVotes := postFields[5].Descriptor()
+	postDescDownVotes := postFields[6].Descriptor()
 	// post.DefaultDownVotes holds the default value on creation for the down_votes field.
 	post.DefaultDownVotes = postDescDownVotes.Default.(int)
 	tagMixin := schema.Tag{}.Mixin()

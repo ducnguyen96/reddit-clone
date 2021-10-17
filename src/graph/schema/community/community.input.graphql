@@ -1,0 +1,10 @@
+input CreateCommunityInput {
+    name: String! @binding(constraint: "required,max=300,min=2,alphanum,excludesall=0x7C!<>/;'")
+    type: CommunityType!
+    isAdult: Boolean!
+}
+
+input QueryCommunityInput {
+    limit: Int @binding(constraint: "numeric")
+    page: Int @binding(constraint: "numeric")
+}

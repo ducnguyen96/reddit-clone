@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
+	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/post"
 	"github.com/ducnguyen96/reddit-clone/ent/predicate"
 	"github.com/ducnguyen96/reddit-clone/ent/schema/enums"
@@ -40,6 +41,12 @@ func (pu *PostUpdate) SetUpdatedAt(t time.Time) *PostUpdate {
 // SetTitle sets the "title" field.
 func (pu *PostUpdate) SetTitle(s string) *PostUpdate {
 	pu.mutation.SetTitle(s)
+	return pu
+}
+
+// SetSlug sets the "slug" field.
+func (pu *PostUpdate) SetSlug(s string) *PostUpdate {
+	pu.mutation.SetSlug(s)
 	return pu
 }
 
@@ -118,6 +125,21 @@ func (pu *PostUpdate) AddOwner(u ...*User) *PostUpdate {
 	return pu.AddOwnerIDs(ids...)
 }
 
+// AddCommunityIDs adds the "community" edge to the Community entity by IDs.
+func (pu *PostUpdate) AddCommunityIDs(ids ...uint64) *PostUpdate {
+	pu.mutation.AddCommunityIDs(ids...)
+	return pu
+}
+
+// AddCommunity adds the "community" edges to the Community entity.
+func (pu *PostUpdate) AddCommunity(c ...*Community) *PostUpdate {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return pu.AddCommunityIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (pu *PostUpdate) AddTagIDs(ids ...uint64) *PostUpdate {
 	pu.mutation.AddTagIDs(ids...)
@@ -172,6 +194,27 @@ func (pu *PostUpdate) RemoveOwner(u ...*User) *PostUpdate {
 		ids[i] = u[i].ID
 	}
 	return pu.RemoveOwnerIDs(ids...)
+}
+
+// ClearCommunity clears all "community" edges to the Community entity.
+func (pu *PostUpdate) ClearCommunity() *PostUpdate {
+	pu.mutation.ClearCommunity()
+	return pu
+}
+
+// RemoveCommunityIDs removes the "community" edge to Community entities by IDs.
+func (pu *PostUpdate) RemoveCommunityIDs(ids ...uint64) *PostUpdate {
+	pu.mutation.RemoveCommunityIDs(ids...)
+	return pu
+}
+
+// RemoveCommunity removes "community" edges to Community entities.
+func (pu *PostUpdate) RemoveCommunity(c ...*Community) *PostUpdate {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return pu.RemoveCommunityIDs(ids...)
 }
 
 // ClearTags clears all "tags" edges to the Tag entity.
@@ -298,6 +341,11 @@ func (pu *PostUpdate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
 		}
 	}
+	if v, ok := pu.mutation.Slug(); ok {
+		if err := post.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
+		}
+	}
 	if v, ok := pu.mutation.GetType(); ok {
 		if err := post.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
@@ -341,6 +389,13 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: post.FieldTitle,
+		})
+	}
+	if value, ok := pu.mutation.Slug(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldSlug,
 		})
 	}
 	if value, ok := pu.mutation.Content(); ok {
@@ -438,6 +493,60 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.CommunityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedCommunityIDs(); len(nodes) > 0 && !pu.mutation.CommunityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.CommunityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
 				},
 			},
 		}
@@ -585,6 +694,12 @@ func (puo *PostUpdateOne) SetTitle(s string) *PostUpdateOne {
 	return puo
 }
 
+// SetSlug sets the "slug" field.
+func (puo *PostUpdateOne) SetSlug(s string) *PostUpdateOne {
+	puo.mutation.SetSlug(s)
+	return puo
+}
+
 // SetContent sets the "content" field.
 func (puo *PostUpdateOne) SetContent(s string) *PostUpdateOne {
 	puo.mutation.SetContent(s)
@@ -660,6 +775,21 @@ func (puo *PostUpdateOne) AddOwner(u ...*User) *PostUpdateOne {
 	return puo.AddOwnerIDs(ids...)
 }
 
+// AddCommunityIDs adds the "community" edge to the Community entity by IDs.
+func (puo *PostUpdateOne) AddCommunityIDs(ids ...uint64) *PostUpdateOne {
+	puo.mutation.AddCommunityIDs(ids...)
+	return puo
+}
+
+// AddCommunity adds the "community" edges to the Community entity.
+func (puo *PostUpdateOne) AddCommunity(c ...*Community) *PostUpdateOne {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return puo.AddCommunityIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (puo *PostUpdateOne) AddTagIDs(ids ...uint64) *PostUpdateOne {
 	puo.mutation.AddTagIDs(ids...)
@@ -714,6 +844,27 @@ func (puo *PostUpdateOne) RemoveOwner(u ...*User) *PostUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return puo.RemoveOwnerIDs(ids...)
+}
+
+// ClearCommunity clears all "community" edges to the Community entity.
+func (puo *PostUpdateOne) ClearCommunity() *PostUpdateOne {
+	puo.mutation.ClearCommunity()
+	return puo
+}
+
+// RemoveCommunityIDs removes the "community" edge to Community entities by IDs.
+func (puo *PostUpdateOne) RemoveCommunityIDs(ids ...uint64) *PostUpdateOne {
+	puo.mutation.RemoveCommunityIDs(ids...)
+	return puo
+}
+
+// RemoveCommunity removes "community" edges to Community entities.
+func (puo *PostUpdateOne) RemoveCommunity(c ...*Community) *PostUpdateOne {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return puo.RemoveCommunityIDs(ids...)
 }
 
 // ClearTags clears all "tags" edges to the Tag entity.
@@ -847,6 +998,11 @@ func (puo *PostUpdateOne) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
 		}
 	}
+	if v, ok := puo.mutation.Slug(); ok {
+		if err := post.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
+		}
+	}
 	if v, ok := puo.mutation.GetType(); ok {
 		if err := post.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
@@ -907,6 +1063,13 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: post.FieldTitle,
+		})
+	}
+	if value, ok := puo.mutation.Slug(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldSlug,
 		})
 	}
 	if value, ok := puo.mutation.Content(); ok {
@@ -1004,6 +1167,60 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.CommunityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedCommunityIDs(); len(nodes) > 0 && !puo.mutation.CommunityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.CommunityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.CommunityTable,
+			Columns: post.CommunityPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: community.FieldID,
 				},
 			},
 		}

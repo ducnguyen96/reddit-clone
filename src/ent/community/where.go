@@ -115,6 +115,13 @@ func Name(v string) predicate.Community {
 	})
 }
 
+// Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
+func Slug(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSlug), v))
+	})
+}
+
 // IsAdult applies equality check predicate on the "is_adult" field. It's identical to IsAdultEQ.
 func IsAdult(v bool) predicate.Community {
 	return predicate.Community(func(s *sql.Selector) {
@@ -385,6 +392,117 @@ func NameContainsFold(v string) predicate.Community {
 	})
 }
 
+// SlugEQ applies the EQ predicate on the "slug" field.
+func SlugEQ(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSlug), v))
+	})
+}
+
+// SlugNEQ applies the NEQ predicate on the "slug" field.
+func SlugNEQ(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSlug), v))
+	})
+}
+
+// SlugIn applies the In predicate on the "slug" field.
+func SlugIn(vs ...string) predicate.Community {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Community(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldSlug), v...))
+	})
+}
+
+// SlugNotIn applies the NotIn predicate on the "slug" field.
+func SlugNotIn(vs ...string) predicate.Community {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Community(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldSlug), v...))
+	})
+}
+
+// SlugGT applies the GT predicate on the "slug" field.
+func SlugGT(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldSlug), v))
+	})
+}
+
+// SlugGTE applies the GTE predicate on the "slug" field.
+func SlugGTE(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldSlug), v))
+	})
+}
+
+// SlugLT applies the LT predicate on the "slug" field.
+func SlugLT(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldSlug), v))
+	})
+}
+
+// SlugLTE applies the LTE predicate on the "slug" field.
+func SlugLTE(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldSlug), v))
+	})
+}
+
+// SlugContains applies the Contains predicate on the "slug" field.
+func SlugContains(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldSlug), v))
+	})
+}
+
+// SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
+func SlugHasPrefix(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldSlug), v))
+	})
+}
+
+// SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
+func SlugHasSuffix(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldSlug), v))
+	})
+}
+
+// SlugEqualFold applies the EqualFold predicate on the "slug" field.
+func SlugEqualFold(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldSlug), v))
+	})
+}
+
+// SlugContainsFold applies the ContainsFold predicate on the "slug" field.
+func SlugContainsFold(v string) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldSlug), v))
+	})
+}
+
 // TypeEQ applies the EQ predicate on the "type" field.
 func TypeEQ(v enums.CommunityType) predicate.Community {
 	return predicate.Community(func(s *sql.Selector) {
@@ -466,6 +584,62 @@ func HasUsersWith(preds ...predicate.User) predicate.Community {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(UsersInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, UsersTable, UsersPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAdmins applies the HasEdge predicate on the "admins" edge.
+func HasAdmins() predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AdminsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, AdminsTable, AdminsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAdminsWith applies the HasEdge predicate on the "admins" edge with a given conditions (other predicates).
+func HasAdminsWith(preds ...predicate.User) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AdminsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, AdminsTable, AdminsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPosts applies the HasEdge predicate on the "posts" edge.
+func HasPosts() predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PostsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, PostsTable, PostsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPostsWith applies the HasEdge predicate on the "posts" edge with a given conditions (other predicates).
+func HasPostsWith(preds ...predicate.Post) predicate.Community {
+	return predicate.Community(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PostsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, PostsTable, PostsPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
