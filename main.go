@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/ducnguyen96/reddit-clone/ent"
@@ -22,9 +26,6 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
-	"log"
-	"net/http"
-	"os"
 )
 
 func init() {
@@ -71,7 +72,7 @@ func main() {
 	r.Use(utils.GinContextToContextMiddleware())
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"https://reddit-clone.ducnguyen96.xyz"}
+	corsConfig.AllowOrigins = []string{"https://redditclone.ducnguyen96.xyz", "http://localhost:3000"}
 	corsConfig.AllowCredentials = true
 	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "Authorization")
 	r.Use(cors.New(corsConfig))
@@ -92,10 +93,10 @@ func main() {
 	postService := post_services.NewPostService(postRepo)
 
 	gr := generated.Config{Resolvers: &graph.Resolver{
-		UerService: userService,
-		AuthService: authService,
+		UerService:       userService,
+		AuthService:      authService,
 		CommunityService: communityService,
-		PostService: postService,
+		PostService:      postService,
 	}}
 
 	gr.Directives.Binding = directives.Binding
