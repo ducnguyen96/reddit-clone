@@ -18,6 +18,7 @@ import (
 	"github.com/ducnguyen96/reddit-clone/graph/services/post_services"
 	"github.com/ducnguyen96/reddit-clone/graph/services/user_services"
 	"github.com/ducnguyen96/reddit-clone/utils"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
@@ -69,6 +70,12 @@ func main() {
 	r := gin.Default()
 	r.Use(utils.GinContextToContextMiddleware())
 
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:3000"}
+	corsConfig.AllowCredentials = true
+	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "Authorization")
+	r.Use(cors.New(corsConfig))
+
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome to reddit clone")
 	})
@@ -105,7 +112,7 @@ func main() {
 		}
 	}())
 
-	if err := r.Run(); err != nil { // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	if err := r.Run(":5000"); err != nil { // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 		panic("Error")
 	}
 }

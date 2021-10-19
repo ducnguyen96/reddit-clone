@@ -72,6 +72,7 @@ type ComplexityRoot struct {
 		CreatePost      func(childComplexity int, input model.CreatePostInput) int
 		Login           func(childComplexity int, input model.UserLoginInput) int
 		Register        func(childComplexity int, input model.UserRegisterInput) int
+		SignOut         func(childComplexity int) int
 	}
 
 	Post struct {
@@ -136,6 +137,7 @@ type MutationResolver interface {
 	CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error)
 	Register(ctx context.Context, input model.UserRegisterInput) (model.RegisterResult, error)
 	Login(ctx context.Context, input model.UserLoginInput) (*model.TokenPayloadDto, error)
+	SignOut(ctx context.Context) (*bool, error)
 }
 type PostResolver interface {
 	Community(ctx context.Context, obj *model.Post) (*model.Community, error)
@@ -295,6 +297,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Register(childComplexity, args["input"].(model.UserRegisterInput)), true
+
+	case "Mutation.signOut":
+		if e.complexity.Mutation.SignOut == nil {
+			break
+		}
+
+		return e.complexity.Mutation.SignOut(childComplexity), true
 
 	case "Post.community":
 		if e.complexity.Post.Community == nil {
@@ -701,6 +710,7 @@ enum InputContentMode {
 	{Name: "graph/schema/user/auth.graphql", Input: `extend type Mutation {
     register(input: UserRegisterInput!): RegisterResult!
     login(input: UserLoginInput!): TokenPayloadDto!
+    signOut: Boolean
 }`, BuiltIn: false},
 	{Name: "graph/schema/user/auth.type.graphql", Input: `type TokenPayloadDto {
     expiresIn: Int
@@ -1530,6 +1540,38 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	res := resTmp.(*model.TokenPayloadDto)
 	fc.Result = res
 	return ec.marshalNTokenPayloadDto2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐTokenPayloadDto(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_signOut(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SignOut(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -4471,6 +4513,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "signOut":
+			out.Values[i] = ec._Mutation_signOut(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

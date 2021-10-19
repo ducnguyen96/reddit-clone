@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"fmt"
-
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
 )
@@ -77,4 +76,8 @@ func (r *mutationResolver) Login(ctx context.Context, input model.UserLoginInput
 	}
 
 	return token, nil
+}
+
+func (r *mutationResolver) SignOut(ctx context.Context) (*bool, error) {
+	panic(fmt.Errorf("not implemented"))
 }

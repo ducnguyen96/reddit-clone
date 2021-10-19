@@ -48,6 +48,14 @@ func (s *UserService) GetCurrentUser(ctx context.Context) (*ent.User, error) {
 	return usr, nil
 }
 
+func (s *UserService) GetCurrentUserNoTokenValid(ctx context.Context) (*ent.User, error) {
+	token := utils.GetAuthToken(ctx)
+	if len(token) < 10 {
+		return nil, nil
+	}
+	return s.GetUserByToken(ctx, token)
+}
+
 func (s *UserService) GetUserByToken(ctx context.Context, token string) (*ent.User, error) {
 	if !strings.HasPrefix(token, "Bearer ") {
 		return nil, errors.New("invalid token")

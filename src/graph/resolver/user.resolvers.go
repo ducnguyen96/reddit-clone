@@ -11,9 +11,12 @@ import (
 )
 
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	usr, err := r.UerService.GetCurrentUser(ctx)
+	usr, err := r.UerService.GetCurrentUserNoTokenValid(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if usr == nil {
+		return nil, nil
 	}
 	return utils.MapEntGoUserToGraphUser(usr), nil
 }
