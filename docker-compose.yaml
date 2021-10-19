@@ -5,10 +5,16 @@ volumes:
 
 services:
   app:
-    env_file:
-      - .env
     image: ${DOCKER_HUB_USERNAME}/reddit-clone-apis:latest
     container_name: apis
+    environment:
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - TOKEN_EXPIRES_IN=${TOKEN_EXPIRES_IN}
     ports:
       - "5000:5000"
     restart: always
