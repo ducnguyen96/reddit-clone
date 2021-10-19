@@ -76,6 +76,8 @@ jobs:
 #    needs: [build]
     runs-on: self-hosted
     steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v2
       - name: docker-compose down
         run: docker-compose down docker-compose.yaml
       - name: docker-compose up
