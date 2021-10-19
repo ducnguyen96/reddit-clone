@@ -88,3 +88,5 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           TOKEN_EXPIRES_IN: ${{ secrets.TOKEN_EXPIRES_IN }}
         run: docker-compose up -d -f docker-compose.yaml
+      - name: test
+        run: docker ps -a
