@@ -77,7 +77,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: docker-compose down
-        run: docker-compose down -f docker-compose.yaml
+        run: docker-compose down
       - name: docker-compose up
         env:
           AUTH_SECRET_KEY: ${{ secrets.AUTH_SECRET_KEY }}
@@ -87,6 +87,6 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_USER: ${{ secrets.DB_USER }}
           TOKEN_EXPIRES_IN: ${{ secrets.TOKEN_EXPIRES_IN }}
-        run: docker-compose up -d -f docker-compose.yaml
+        run: docker-compose up -d
       - name: test
         run: docker ps -a
