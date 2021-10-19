@@ -17,11 +17,6 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: [debian-latest]
-
-    strategy:
-      matrix:
-        image-name: reddit-clone-apis
-
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v2
@@ -43,7 +38,7 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image-name }}:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
@@ -57,8 +52,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: hub.docker.com
-          image: ${{ matrix.image-name }}:latest
+          image: reddit-clone-apis:latest
           options: -v ${{ github.workspace }}:/work -e ABC=123
           run: |
-            echo "Running Script"
-            /work/run-script
+            echo "Running Script" && \
+            docker run -it -d -p 5000:5000 --name apis \
+              -e AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }} \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e DB_PORT=${{ secrets.DB_PORT }} \
+              -e DB_USER=${{ secrets.DB_USER }} \
+              -e TOKEN_EXPIRES_IN=${{ secrets.TOKEN_EXPIRES_IN }} \
+            reddit-clone-apis:latest
