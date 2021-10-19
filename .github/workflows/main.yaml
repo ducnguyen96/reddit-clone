@@ -53,7 +53,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: hub.docker.com
-          image: reddit-clone-apis:latest
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
           options: -v ${{ github.workspace }}:/work -e ABC=123
           run: |
             echo "Running Script" && \
