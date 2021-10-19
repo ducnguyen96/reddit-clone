@@ -89,6 +89,7 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_USER: ${{ secrets.DB_USER }}
           TOKEN_EXPIRES_IN: ${{ secrets.TOKEN_EXPIRES_IN }}
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
         run: docker-compose up -d docker-compose.yaml
       - name: test
         run: docker ps -a
