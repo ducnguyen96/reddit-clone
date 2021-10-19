@@ -60,5 +60,7 @@ jobs:
 #    needs: [pull]
     runs-on: self-hosted
     steps:
-      - name: Deploy
+      - name: Remove old container
+        run: docker rm -f apis
+      - name: Deploy new container
         run: docker run -it -d -p 5000:5000 --name apis --env AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }} --env DB_HOST=${{ secrets.DB_HOST }} --env DB_NAME=${{ secrets.DB_NAME }} --env DB_PASSWORD=${{ secrets.DB_PASSWORD }} --env DB_PORT=${{ secrets.DB_PORT }} --env DB_USER=${{ secrets.DB_USER }} --env TOKEN_EXPIRES_IN=${{ secrets.TOKEN_EXPIRES_IN }} ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
