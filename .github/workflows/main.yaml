@@ -14,36 +14,36 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: [ubuntu-latest]
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v2
-        with:
-          context: ./
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
-
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+#  build:
+#    # The type of runner that the job will run on
+#    runs-on: [ubuntu-latest]
+#    steps:
+#      - name: Check Out Repo
+#        uses: actions/checkout@v2
+#
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v1
+#        with:
+#          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+#
+#      - name: Set up Docker Buildx
+#        id: buildx
+#        uses: docker/setup-buildx-action@v1
+#
+#      - name: Build and push
+#        id: docker_build
+#        uses: docker/build-push-action@v2
+#        with:
+#          context: ./
+#          file: ./Dockerfile
+#          push: true
+#          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
+#
+#      - name: Image digest
+#        run: echo ${{ steps.docker_build.outputs.digest }}
   deploy:
-    needs: [build]
+#    needs: [build]
     runs-on: self-hosted
     steps:
       - name: Checkout
@@ -54,13 +54,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: hub.docker.com
           image: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
-          options: -it -d -p 5000:5000 --name apis \
-                    -e AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }} \
-                    -e DB_HOST=${{ secrets.DB_HOST }} \
-                    -e DB_NAME=${{ secrets.DB_NAME }} \
-                    -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-                    -e DB_PORT=${{ secrets.DB_PORT }} \
-                    -e DB_USER=${{ secrets.DB_USER }} \
-                    -e TOKEN_EXPIRES_IN=${{ secrets.TOKEN_EXPIRES_IN }} \
+          options: -it -d -p 5000:5000 --name apis --env AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }} --env DB_HOST=${{ secrets.DB_HOST }} --env DB_NAME=${{ secrets.DB_NAME }} --env DB_PASSWORD=${{ secrets.DB_PASSWORD }} --env DB_PORT=${{ secrets.DB_PORT }} --env DB_USER=${{ secrets.DB_USER }} --env TOKEN_EXPIRES_IN=${{ secrets.TOKEN_EXPIRES_IN }}
           run:  |
             echo "Running Script"
