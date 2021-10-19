@@ -26,9 +26,9 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_DB=${DB_NAME}
-      POSTGRES_USER=${DB_USER}
-      POSTGRES_PASSWORD=${DB_PASSWORD}
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       TZ: 'GMT'
       PGTZ: 'GMT'
     ports:
