@@ -1,0 +1,31 @@
+version: '3'
+
+volumes:
+  db: # mount it internally instead of a folder. it avoids file lock problems
+
+services:
+  app:
+    env_file:
+      - .env
+    image: ${DOCKER_HUB_USERNAME}/reddit-clone-apis:latest
+    container_name: apis
+    ports:
+      - "5000:5000"
+    restart: always
+    links:
+      - postgres
+
+  postgres:
+    image: postgres:14.0-alpine3.14
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: 'GMT'
+      PGTZ: 'GMT'
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
