@@ -55,9 +55,7 @@ jobs:
           registry: hub.docker.com
           image: ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
           options: -v ${{ github.workspace }}:/work -e ABC=123
-          run: |
-            echo "Running Script" && \
-            docker run -it -d -p 5000:5000 --name apis \
+          run: -it -d -p 5000:5000 --name apis \
               -e AUTH_SECRET_KEY=${{ secrets.AUTH_SECRET_KEY }} \
               -e DB_HOST=${{ secrets.DB_HOST }} \
               -e DB_NAME=${{ secrets.DB_NAME }} \
@@ -65,4 +63,3 @@ jobs:
               -e DB_PORT=${{ secrets.DB_PORT }} \
               -e DB_USER=${{ secrets.DB_USER }} \
               -e TOKEN_EXPIRES_IN=${{ secrets.TOKEN_EXPIRES_IN }} \
-            reddit-clone-apis:latest
