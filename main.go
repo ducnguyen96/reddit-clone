@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -77,10 +76,6 @@ func main() {
 	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "Authorization")
 	r.Use(cors.New(corsConfig))
 
-	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome to reddit clone")
-	})
-
 	// Repositories
 	userRepo := user_repository.NewUserRepository(readClient, readClient)
 	communityRepo := community_repository.NewCommunityRepository(readClient, readClient)
@@ -102,12 +97,12 @@ func main() {
 	gr.Directives.Binding = directives.Binding
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(gr))
 
-	r.POST("/graphql", func(c *gin.Context) {
+	r.POST("/", func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	})
 
-	r.GET("/graphql", func() gin.HandlerFunc {
-		h := playground.Handler("GraphQL", "/graphql")
+	r.GET("/", func() gin.HandlerFunc {
+		h := playground.Handler("GraphQL", "/")
 		return func(c *gin.Context) {
 			h.ServeHTTP(c.Writer, c.Request)
 		}
