@@ -79,7 +79,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v2
       - name: docker-compose down
-        run: docker-compose down docker-compose.yaml
+        run: docker-compose down
       - name: docker-compose up
         env:
           AUTH_SECRET_KEY: ${{ secrets.AUTH_SECRET_KEY }}
@@ -90,6 +90,6 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           TOKEN_EXPIRES_IN: ${{ secrets.TOKEN_EXPIRES_IN }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-        run: docker-compose up -d docker-compose.yaml
+        run: docker-compose up -d
       - name: test
         run: docker ps -a
