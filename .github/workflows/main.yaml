@@ -76,7 +76,10 @@ jobs:
 #    needs: [build]
     runs-on: self-hosted
     steps:
-      - env:
+      - name: docker-compose down
+        run: docker-compose down -f docker-compose.yaml
+      - name: docker-compose up
+        env:
           AUTH_SECRET_KEY: ${{ secrets.AUTH_SECRET_KEY }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_NAME: ${{ secrets.DB_NAME }}
@@ -84,7 +87,4 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_USER: ${{ secrets.DB_USER }}
           TOKEN_EXPIRES_IN: ${{ secrets.TOKEN_EXPIRES_IN }}
-      - name: docker-compose down
-        run: docker-compose down -f docker-compose.yaml
-      - name: docker-compose up
         run: docker-compose up -f docker-compose.yaml
