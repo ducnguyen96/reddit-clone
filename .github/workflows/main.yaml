@@ -47,6 +47,8 @@ jobs:
     needs: [build]
     runs-on: self-hosted
     steps:
+      - name: update image
+        run: docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/reddit-clone-apis:latest
       - name: Check Out Repo
         uses: actions/checkout@v2
       - name: docker-compose down
