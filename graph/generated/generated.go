@@ -97,11 +97,12 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetCommunity   func(childComplexity int, slug string) int
-		GetPost        func(childComplexity int, slug string) int
-		Me             func(childComplexity int) int
-		QueryCommunity func(childComplexity int, input model.QueryCommunityInput) int
-		QueryPost      func(childComplexity int, input model.QueryPostInput) int
+		GetCommunity           func(childComplexity int, slug string) int
+		GetPost                func(childComplexity int, slug string) int
+		IsCommunityNameExisted func(childComplexity int, name string) int
+		Me                     func(childComplexity int) int
+		QueryCommunity         func(childComplexity int, input model.QueryCommunityInput) int
+		QueryPost              func(childComplexity int, input model.QueryPostInput) int
 	}
 
 	RegisterBadRequest struct {
@@ -146,6 +147,7 @@ type PostResolver interface {
 type QueryResolver interface {
 	GetCommunity(ctx context.Context, slug string) (*model.Community, error)
 	QueryCommunity(ctx context.Context, input model.QueryCommunityInput) (*model.CommunityPagination, error)
+	IsCommunityNameExisted(ctx context.Context, name string) (bool, error)
 	GetPost(ctx context.Context, slug string) (*model.Post, error)
 	QueryPost(ctx context.Context, input model.QueryPostInput) (*model.PostPagination, error)
 	Me(ctx context.Context) (*model.User, error)
@@ -434,6 +436,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetPost(childComplexity, args["slug"].(string)), true
 
+	case "Query.isCommunityNameExisted":
+		if e.complexity.Query.IsCommunityNameExisted == nil {
+			break
+		}
+
+		args, err := ec.field_Query_isCommunityNameExisted_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.IsCommunityNameExisted(childComplexity, args["name"].(string)), true
+
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -620,6 +634,7 @@ var sources = []*ast.Source{
 	{Name: "graph/schema/community/community.graphql", Input: `extend type Query {
     getCommunity(slug: String!): Community!
     queryCommunity(input: QueryCommunityInput!): CommunityPagination!
+    isCommunityNameExisted(name: String!): Boolean!
 }
 
 extend type Mutation {
@@ -883,6 +898,21 @@ func (ec *executionContext) field_Query_getPost_args(ctx context.Context, rawArg
 		}
 	}
 	args["slug"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_isCommunityNameExisted_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -2181,6 +2211,48 @@ func (ec *executionContext) _Query_queryCommunity(ctx context.Context, field gra
 	res := resTmp.(*model.CommunityPagination)
 	fc.Result = res
 	return ec.marshalNCommunityPagination2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐCommunityPagination(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_isCommunityNameExisted(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_isCommunityNameExisted_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().IsCommunityNameExisted(rctx, args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4701,6 +4773,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_queryCommunity(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "isCommunityNameExisted":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_isCommunityNameExisted(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

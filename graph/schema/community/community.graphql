@@ -1,6 +1,7 @@
 extend type Query {
     getCommunity(slug: String!): Community!
     queryCommunity(input: QueryCommunityInput!): CommunityPagination!
+    isCommunityNameExisted(name: String!): Boolean!
 }
 
 extend type Mutation {

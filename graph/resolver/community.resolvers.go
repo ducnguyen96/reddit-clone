@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"errors"
-
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
@@ -48,6 +47,11 @@ func (r *queryResolver) QueryCommunity(ctx context.Context, input model.QueryCom
 		CurrentPage: *input.Page,
 		Communities: result,
 	}, nil
+}
+
+func (r *queryResolver) IsCommunityNameExisted(ctx context.Context, name string) (bool, error) {
+	c := r.CommunityService.GetBySlug(ctx, name)
+	return c != nil, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
