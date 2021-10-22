@@ -6,6 +6,7 @@ type Community {
     isAdult: Boolean!
     createdAt: String!
     updatedAt: String!
+    numberOfMember: Int!
 }
 
 enum CommunityType {

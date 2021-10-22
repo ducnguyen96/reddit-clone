@@ -15,7 +15,7 @@ func NewCommunityService(repository *community_repository.CommunityRepository) *
 	return &CommunityService{repository: repository}
 }
 
-func (c *CommunityService) Create(ctx context.Context, usr ent.User, input model.CreateCommunityInput) (*ent.Community,error) {
+func (c *CommunityService) Create(ctx context.Context, usr ent.User, input model.CreateCommunityInput) (*ent.Community, error) {
 	return c.repository.Create(ctx, usr, input)
 }
 
@@ -23,6 +23,10 @@ func (c *CommunityService) GetBySlug(ctx context.Context, slug string) *ent.Comm
 	return c.repository.FindBySlug(ctx, slug)
 }
 
-func (c *CommunityService) Query(ctx context.Context, input model.QueryCommunityInput) []*ent.Community {
-	return c.repository.QueryCommunity(ctx, input)
+func (c *CommunityService) Query(ctx context.Context, input model.QueryCommunityInput, usr *ent.User) []*ent.Community {
+	return c.repository.QueryCommunity(ctx, input, usr)
+}
+
+func (c *CommunityService) NumberOfMembers(ctx context.Context, id uint64) int {
+	return c.repository.NumberOfMembers(ctx, id)
 }

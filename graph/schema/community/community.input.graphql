@@ -7,4 +7,5 @@ input CreateCommunityInput {
 input QueryCommunityInput {
     limit: Int @binding(constraint: "numeric")
     page: Int @binding(constraint: "numeric")
+    onlyMine: Boolean
 }

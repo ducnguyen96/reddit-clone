@@ -64,3 +64,7 @@ models:
         resolver: true
       owner:
         resolver: true
+  Community:
+    fields:
+      numberOfMember:
+        resolver: true

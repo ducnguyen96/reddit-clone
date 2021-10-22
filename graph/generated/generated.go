@@ -36,6 +36,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Community() CommunityResolver
 	Mutation() MutationResolver
 	Post() PostResolver
 	Query() QueryResolver
@@ -47,13 +48,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Community struct {
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		IsAdult   func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Slug      func(childComplexity int) int
-		Type      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IsAdult        func(childComplexity int) int
+		Name           func(childComplexity int) int
+		NumberOfMember func(childComplexity int) int
+		Slug           func(childComplexity int) int
+		Type           func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
 	}
 
 	CommunityPagination struct {
@@ -133,6 +135,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type CommunityResolver interface {
+	NumberOfMember(ctx context.Context, obj *model.Community) (int, error)
+}
 type MutationResolver interface {
 	CreateCommunity(ctx context.Context, input model.CreateCommunityInput) (*model.Community, error)
 	CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error)
@@ -195,6 +200,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Community.Name(childComplexity), true
+
+	case "Community.numberOfMember":
+		if e.complexity.Community.NumberOfMember == nil {
+			break
+		}
+
+		return e.complexity.Community.NumberOfMember(childComplexity), true
 
 	case "Community.slug":
 		if e.complexity.Community.Slug == nil {
@@ -649,6 +661,7 @@ extend type Mutation {
 input QueryCommunityInput {
     limit: Int @binding(constraint: "numeric")
     page: Int @binding(constraint: "numeric")
+    onlyMine: Boolean
 }`, BuiltIn: false},
 	{Name: "graph/schema/community/community.type.graphql", Input: `type Community {
     id: ID!
@@ -658,6 +671,7 @@ input QueryCommunityInput {
     isAdult: Boolean!
     createdAt: String!
     updatedAt: String!
+    numberOfMember: Int!
 }
 
 enum CommunityType {
@@ -1227,6 +1241,41 @@ func (ec *executionContext) _Community_updatedAt(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Community_numberOfMember(ctx context.Context, field graphql.CollectedField, obj *model.Community) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Community",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Community().NumberOfMember(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CommunityPagination_length(ctx context.Context, field graphql.CollectedField, obj *model.CommunityPagination) (ret graphql.Marshaler) {
@@ -4149,6 +4198,14 @@ func (ec *executionContext) unmarshalInputQueryCommunityInput(ctx context.Contex
 				err := fmt.Errorf(`unexpected type %T from directive, should be *int`, tmp)
 				return it, graphql.ErrorOnPath(ctx, err)
 			}
+		case "onlyMine":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("onlyMine"))
+			it.OnlyMine, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4438,38 +4495,52 @@ func (ec *executionContext) _Community(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._Community_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Community_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "slug":
 			out.Values[i] = ec._Community_slug(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
 			out.Values[i] = ec._Community_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "isAdult":
 			out.Values[i] = ec._Community_isAdult(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Community_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Community_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "numberOfMember":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Community_numberOfMember(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

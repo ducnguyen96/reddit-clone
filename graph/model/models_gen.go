@@ -13,13 +13,14 @@ type RegisterResult interface {
 }
 
 type Community struct {
-	ID        string        `json:"id"`
-	Name      string        `json:"name"`
-	Slug      string        `json:"slug"`
-	Type      CommunityType `json:"type"`
-	IsAdult   bool          `json:"isAdult"`
-	CreatedAt string        `json:"createdAt"`
-	UpdatedAt string        `json:"updatedAt"`
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	Slug           string        `json:"slug"`
+	Type           CommunityType `json:"type"`
+	IsAdult        bool          `json:"isAdult"`
+	CreatedAt      string        `json:"createdAt"`
+	UpdatedAt      string        `json:"updatedAt"`
+	NumberOfMember int           `json:"numberOfMember"`
 }
 
 type CommunityPagination struct {
@@ -69,8 +70,9 @@ type PostPagination struct {
 }
 
 type QueryCommunityInput struct {
-	Limit *int `json:"limit"`
-	Page  *int `json:"page"`
+	Limit    *int  `json:"limit"`
+	Page     *int  `json:"page"`
+	OnlyMine *bool `json:"onlyMine"`
 }
 
 type QueryPostInput struct {

@@ -6,6 +6,8 @@ package graph
 import (
 	"context"
 	"errors"
+
+	"github.com/ducnguyen96/reddit-clone/ent"
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
@@ -33,7 +35,17 @@ func (r *queryResolver) GetCommunity(ctx context.Context, slug string) (*model.C
 }
 
 func (r *queryResolver) QueryCommunity(ctx context.Context, input model.QueryCommunityInput) (*model.CommunityPagination, error) {
-	c := r.CommunityService.Query(ctx, input)
+	var c []*ent.Community
+	if input.OnlyMine != nil && *input.OnlyMine == true {
+		usr, err := r.UerService.GetCurrentUser(ctx)
+		if err != nil {
+			c = []*ent.Community{}
+		} else {
+			c = r.CommunityService.Query(ctx, input, usr)
+		}
+	} else {
+		c = r.CommunityService.Query(ctx, input, nil)
+	}
 	l := len(c)
 
 	result := make([]*model.Community, l)

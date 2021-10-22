@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ducnguyen96/reddit-clone/ent"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
+	"github.com/ducnguyen96/reddit-clone/ent/user"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
 	"github.com/gosimple/slug"
@@ -44,8 +45,14 @@ func (r *CommunityRepository) FindBySlug(ctx context.Context, slug string) *ent.
 	return r.readDB.Community.Query().Where(community.Slug(slug)).FirstX(ctx)
 }
 
-func (r *CommunityRepository) QueryCommunity(ctx context.Context, input model.QueryCommunityInput) []*ent.Community {
+func (r *CommunityRepository) QueryCommunity(ctx context.Context, input model.QueryCommunityInput, usr *ent.User) []*ent.Community {
+	query := r.readDB.Community.Query()
+	if usr != nil {
+		query.Where(community.HasAdminsWith(user.ID(usr.ID)))
+	}
+
 	limit, page := input.Limit, input.Page
+
 	if limit == nil {
 		*limit = 10
 	}
@@ -53,9 +60,13 @@ func (r *CommunityRepository) QueryCommunity(ctx context.Context, input model.Qu
 		*page = 1
 	}
 	offset := (*page-1)**limit
-	return r.readDB.Community.Query().
+	return query.
 		Limit(*limit).
 		Offset(offset).
 		Order(ent.Asc(community.FieldCreatedAt)).
 		AllX(ctx)
+}
+
+func (r *CommunityRepository) NumberOfMembers(ctx context.Context, id uint64) int {
+	return r.readDB.Community.Query().Where(community.ID(id)).CountX(ctx)
 }
