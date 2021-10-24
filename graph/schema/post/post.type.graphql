@@ -11,6 +11,7 @@ type Post {
     updatedAt: String!
     community: Community!
     owner: User!
+    numberOfComments: Int!
 }
 
 type PostPagination {

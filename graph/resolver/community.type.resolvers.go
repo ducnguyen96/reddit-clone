@@ -5,10 +5,10 @@ package graph
 
 import (
 	"context"
-	"github.com/ducnguyen96/reddit-clone/utils"
 
 	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
+	"github.com/ducnguyen96/reddit-clone/utils"
 )
 
 func (r *communityResolver) NumberOfMember(ctx context.Context, obj *model.Community) (int, error) {

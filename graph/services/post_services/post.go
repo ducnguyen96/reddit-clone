@@ -34,3 +34,7 @@ func (p *PostService) GetCommunity(ctx context.Context, postId uint64) (*ent.Com
 func (p *PostService) GetOwner(ctx context.Context, postId uint64) (*ent.User,error) {
 	return p.repository.GetOwner(ctx, postId)
 }
+
+func (p *PostService) GetNumberOfComments(ctx context.Context, postId uint64) int {
+	return p.repository.GetNumberOfComments(ctx, postId)
+}

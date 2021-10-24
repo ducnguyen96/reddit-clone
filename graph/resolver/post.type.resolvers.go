@@ -30,6 +30,10 @@ func (r *postResolver) Owner(ctx context.Context, obj *model.Post) (*model.User,
 	return utils.MapEntGoUserToGraphUser(usr), nil
 }
 
+func (r *postResolver) NumberOfComments(ctx context.Context, obj *model.Post) (int, error) {
+	return r.PostService.GetNumberOfComments(ctx, utils.StringToUint64(obj.ID)), nil
+}
+
 // Post returns generated.PostResolver implementation.
 func (r *Resolver) Post() generated.PostResolver { return &postResolver{r} }
 

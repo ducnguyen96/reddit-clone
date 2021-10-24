@@ -49,18 +49,19 @@ type CustomError struct {
 }
 
 type Post struct {
-	ID          string           `json:"id"`
-	Title       string           `json:"title"`
-	Slug        string           `json:"slug"`
-	Content     string           `json:"content"`
-	Type        PostType         `json:"type"`
-	ContentMode InputContentMode `json:"contentMode"`
-	UpVotes     int              `json:"upVotes"`
-	DownVotes   int              `json:"downVotes"`
-	CreatedAt   string           `json:"createdAt"`
-	UpdatedAt   string           `json:"updatedAt"`
-	Community   *Community       `json:"community"`
-	Owner       *User            `json:"owner"`
+	ID               string           `json:"id"`
+	Title            string           `json:"title"`
+	Slug             string           `json:"slug"`
+	Content          string           `json:"content"`
+	Type             PostType         `json:"type"`
+	ContentMode      InputContentMode `json:"contentMode"`
+	UpVotes          int              `json:"upVotes"`
+	DownVotes        int              `json:"downVotes"`
+	CreatedAt        string           `json:"createdAt"`
+	UpdatedAt        string           `json:"updatedAt"`
+	Community        *Community       `json:"community"`
+	Owner            *User            `json:"owner"`
+	NumberOfComments int              `json:"numberOfComments"`
 }
 
 type PostPagination struct {

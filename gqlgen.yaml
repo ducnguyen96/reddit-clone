@@ -64,6 +64,8 @@ models:
         resolver: true
       owner:
         resolver: true
+      numberOfComments:
+        resolver: true
   Community:
     fields:
       numberOfMember:

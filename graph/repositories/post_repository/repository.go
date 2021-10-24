@@ -74,8 +74,13 @@ func (p *PostRepository) QueryPost(ctx context.Context, input model.QueryPostInp
 	return p.readDB.Post.Query().
 		Limit(*limit).
 		Offset(offset).
-		Order(ent.Asc(post.FieldCreatedAt)).
+		Order(ent.Desc(post.FieldCreatedAt)).
 		AllX(ctx)
+}
+
+func (p *PostRepository) GetNumberOfComments(ctx context.Context, postId uint64) int {
+	po := p.readDB.Post.Query().Where(post.ID(postId)).FirstX(ctx)
+	return p.readDB.Post.QueryComments(po).CountX(ctx)
 }
 
 func (p *PostRepository) GetCommunity(ctx context.Context, postId uint64) (*ent.Community,error) {

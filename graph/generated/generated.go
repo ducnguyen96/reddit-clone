@@ -78,18 +78,19 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Community   func(childComplexity int) int
-		Content     func(childComplexity int) int
-		ContentMode func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		DownVotes   func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Owner       func(childComplexity int) int
-		Slug        func(childComplexity int) int
-		Title       func(childComplexity int) int
-		Type        func(childComplexity int) int
-		UpVotes     func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
+		Community        func(childComplexity int) int
+		Content          func(childComplexity int) int
+		ContentMode      func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		DownVotes        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		NumberOfComments func(childComplexity int) int
+		Owner            func(childComplexity int) int
+		Slug             func(childComplexity int) int
+		Title            func(childComplexity int) int
+		Type             func(childComplexity int) int
+		UpVotes          func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
 	}
 
 	PostPagination struct {
@@ -148,6 +149,7 @@ type MutationResolver interface {
 type PostResolver interface {
 	Community(ctx context.Context, obj *model.Post) (*model.Community, error)
 	Owner(ctx context.Context, obj *model.Post) (*model.User, error)
+	NumberOfComments(ctx context.Context, obj *model.Post) (int, error)
 }
 type QueryResolver interface {
 	GetCommunity(ctx context.Context, slug string) (*model.Community, error)
@@ -360,6 +362,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Post.ID(childComplexity), true
+
+	case "Post.numberOfComments":
+		if e.complexity.Post.NumberOfComments == nil {
+			break
+		}
+
+		return e.complexity.Post.NumberOfComments(childComplexity), true
 
 	case "Post.owner":
 		if e.complexity.Post.Owner == nil {
@@ -718,6 +727,7 @@ input QueryPostInput {
     updatedAt: String!
     community: Community!
     owner: User!
+    numberOfComments: Int!
 }
 
 type PostPagination {
@@ -2071,6 +2081,41 @@ func (ec *executionContext) _Post_owner(ctx context.Context, field graphql.Colle
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_numberOfComments(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().NumberOfComments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostPagination_length(ctx context.Context, field graphql.CollectedField, obj *model.PostPagination) (ret graphql.Marshaler) {
@@ -4753,6 +4798,20 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Post_owner(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "numberOfComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_numberOfComments(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
