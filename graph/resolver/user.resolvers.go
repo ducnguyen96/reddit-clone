@@ -10,8 +10,22 @@ import (
 	"github.com/ducnguyen96/reddit-clone/utils"
 )
 
+func (r *mutationResolver) UserCreateAction(ctx context.Context, input model.UserCreateActionInput) (*model.UserAction, error) {
+	usr, err := r.UserService.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	at, err := r.UserService.CreateAction(ctx, *usr, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.EntUserActionToGraph(at), nil
+}
+
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	usr, err := r.UerService.GetCurrentUserNoTokenValid(ctx)
+	usr, err := r.UserService.GetCurrentUserNoTokenValid(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ package runtime
 import (
 	"time"
 
+	"github.com/ducnguyen96/reddit-clone/ent/action"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/media"
@@ -18,6 +19,23 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	actionMixin := schema.Action{}.Mixin()
+	actionMixinHooks0 := actionMixin[0].Hooks()
+	action.Hooks[0] = actionMixinHooks0[0]
+	actionMixinFields0 := actionMixin[0].Fields()
+	_ = actionMixinFields0
+	actionFields := schema.Action{}.Fields()
+	_ = actionFields
+	// actionDescCreatedAt is the schema descriptor for created_at field.
+	actionDescCreatedAt := actionMixinFields0[1].Descriptor()
+	// action.DefaultCreatedAt holds the default value on creation for the created_at field.
+	action.DefaultCreatedAt = actionDescCreatedAt.Default.(func() time.Time)
+	// actionDescUpdatedAt is the schema descriptor for updated_at field.
+	actionDescUpdatedAt := actionMixinFields0[2].Descriptor()
+	// action.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	action.DefaultUpdatedAt = actionDescUpdatedAt.Default.(func() time.Time)
+	// action.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	action.UpdateDefaultUpdatedAt = actionDescUpdatedAt.UpdateDefault.(func() time.Time)
 	commentMixin := schema.Comment{}.Mixin()
 	commentMixinHooks0 := commentMixin[0].Hooks()
 	comment.Hooks[0] = commentMixinHooks0[0]

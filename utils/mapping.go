@@ -29,7 +29,7 @@ func MapEntGoCommunityToGraphCommunity(c *ent.Community) *model.Community {
 	}
 }
 
-func EntGoPostToGraphPost(p *ent.Post) *model.Post {
+func EntGoPostToGraphPost(p *ent.Post, isUpVoted bool, isDownVoted bool) *model.Post {
 	return &model.Post{
 		ID:          Uint64ToString(p.ID),
 		Title:       p.Title,
@@ -41,6 +41,19 @@ func EntGoPostToGraphPost(p *ent.Post) *model.Post {
 		DownVotes:   p.DownVotes,
 		CreatedAt:   p.CreatedAt.String(),
 		UpdatedAt:   p.UpdatedAt.String(),
+		IsUpVoted: isUpVoted,
+		IsDownVoted: isDownVoted,
+	}
+}
+
+func EntUserActionToGraph(action *ent.Action) *model.UserAction {
+	return &model.UserAction{
+		ID:         Uint64ToString(action.ID),
+		Type:       EntUserActionTypeToGraph(action.Type),
+		Target:     Uint64ToString(action.Target),
+		TargetType: EntUserActionTargetTypeToGraph(action.TargetType),
+		CreatedAt:   action.CreatedAt.String(),
+		UpdatedAt:   action.UpdatedAt.String(),
 	}
 }
 
@@ -103,5 +116,41 @@ func GraphContentModeToEntContentMode(t model.InputContentMode) enums.InputConte
 		return enums.MarkDown
 	default:
 		return enums.TextEditor
+	}
+}
+
+func GraphUserActionTypeToEnt(t model.UserActionType) enums.UserActionType {
+	switch t {
+	case model.UserActionTypeUpVote:
+		return enums.UpVote
+	default:
+		return enums.DownVote
+	}
+}
+
+func GraphUserActionTargetTypeToEnt(t model.UserActionTargetType) enums.UserActionTargetType {
+	switch t {
+	case model.UserActionTargetTypePost:
+		return enums.POST
+	default:
+		return enums.COMMENT
+	}
+}
+
+func EntUserActionTypeToGraph(actionType enums.UserActionType) model.UserActionType {
+	switch actionType {
+	case enums.UpVote:
+		return model.UserActionTypeUpVote
+	default:
+		return model.UserActionTypeDownVote
+	}
+}
+
+func EntUserActionTargetTypeToGraph(targetType enums.UserActionTargetType) model.UserActionTargetType {
+	switch targetType {
+	case enums.POST:
+		return model.UserActionTargetTypePost
+	default:
+		return model.UserActionTargetTypeComment
 	}
 }

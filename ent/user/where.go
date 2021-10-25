@@ -871,6 +871,34 @@ func HasCommentsWith(preds ...predicate.Comment) predicate.User {
 	})
 }
 
+// HasActions applies the HasEdge predicate on the "actions" edge.
+func HasActions() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActionsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ActionsTable, ActionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasActionsWith applies the HasEdge predicate on the "actions" edge with a given conditions (other predicates).
+func HasActionsWith(preds ...predicate.Action) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ActionsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ActionsTable, ActionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(func(s *sql.Selector) {

@@ -14,7 +14,7 @@ import (
 )
 
 func (r *mutationResolver) CreateCommunity(ctx context.Context, input model.CreateCommunityInput) (*model.Community, error) {
-	usr, err := r.UerService.GetCurrentUser(ctx)
+	usr, err := r.UserService.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (r *queryResolver) GetCommunity(ctx context.Context, slug string) (*model.C
 func (r *queryResolver) QueryCommunity(ctx context.Context, input model.QueryCommunityInput) (*model.CommunityPagination, error) {
 	var c []*ent.Community
 	if input.OnlyMine != nil && *input.OnlyMine == true {
-		usr, err := r.UerService.GetCurrentUser(ctx)
+		usr, err := r.UserService.GetCurrentUser(ctx)
 		if err != nil {
 			c = []*ent.Community{}
 		} else {

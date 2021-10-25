@@ -10,3 +10,9 @@ input UserLoginInput {
     username: String! @binding(constraint: "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
     password: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
 }
+
+input UserCreateActionInput {
+    type: UserActionType!
+    target: ID!
+    targetType: UserActionTargetType!
+}

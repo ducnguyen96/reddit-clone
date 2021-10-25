@@ -62,6 +62,8 @@ type Post struct {
 	Community        *Community       `json:"community"`
 	Owner            *User            `json:"owner"`
 	NumberOfComments int              `json:"numberOfComments"`
+	IsUpVoted        bool             `json:"isUpVoted"`
+	IsDownVoted      bool             `json:"isDownVoted"`
 }
 
 type PostPagination struct {
@@ -112,6 +114,21 @@ type User struct {
 	Avatar    *string `json:"avatar"`
 	CreatedAt string  `json:"createdAt"`
 	UpdatedAt string  `json:"updatedAt"`
+}
+
+type UserAction struct {
+	ID         string               `json:"id"`
+	Type       UserActionType       `json:"type"`
+	Target     string               `json:"target"`
+	TargetType UserActionTargetType `json:"targetType"`
+	CreatedAt  string               `json:"createdAt"`
+	UpdatedAt  string               `json:"updatedAt"`
+}
+
+type UserCreateActionInput struct {
+	Type       UserActionType       `json:"type"`
+	Target     string               `json:"target"`
+	TargetType UserActionTargetType `json:"targetType"`
 }
 
 type UserLoginInput struct {
@@ -290,5 +307,87 @@ func (e *PostType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e PostType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UserActionTargetType string
+
+const (
+	UserActionTargetTypePost    UserActionTargetType = "POST"
+	UserActionTargetTypeComment UserActionTargetType = "COMMENT"
+)
+
+var AllUserActionTargetType = []UserActionTargetType{
+	UserActionTargetTypePost,
+	UserActionTargetTypeComment,
+}
+
+func (e UserActionTargetType) IsValid() bool {
+	switch e {
+	case UserActionTargetTypePost, UserActionTargetTypeComment:
+		return true
+	}
+	return false
+}
+
+func (e UserActionTargetType) String() string {
+	return string(e)
+}
+
+func (e *UserActionTargetType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserActionTargetType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserActionTargetType", str)
+	}
+	return nil
+}
+
+func (e UserActionTargetType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UserActionType string
+
+const (
+	UserActionTypeUpVote   UserActionType = "UpVote"
+	UserActionTypeDownVote UserActionType = "DownVote"
+)
+
+var AllUserActionType = []UserActionType{
+	UserActionTypeUpVote,
+	UserActionTypeDownVote,
+}
+
+func (e UserActionType) IsValid() bool {
+	switch e {
+	case UserActionTypeUpVote, UserActionTypeDownVote:
+		return true
+	}
+	return false
+}
+
+func (e UserActionType) String() string {
+	return string(e)
+}
+
+func (e *UserActionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserActionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserActionType", str)
+	}
+	return nil
+}
+
+func (e UserActionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

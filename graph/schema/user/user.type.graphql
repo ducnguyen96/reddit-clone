@@ -7,6 +7,25 @@ type User {
     updatedAt: String!
 }
 
+type UserAction {
+    id: ID!
+    type: UserActionType!
+    target: ID!
+    targetType: UserActionTargetType!
+    createdAt: String!
+    updatedAt: String!
+}
+
+enum UserActionType {
+    UpVote
+    DownVote
+}
+
+enum UserActionTargetType {
+    POST
+    COMMENT
+}
+
 enum GENDER {
     MALE
     FEMALE

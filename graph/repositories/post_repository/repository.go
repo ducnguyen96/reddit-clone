@@ -74,6 +74,7 @@ func (p *PostRepository) QueryPost(ctx context.Context, input model.QueryPostInp
 	return p.readDB.Post.Query().
 		Limit(*limit).
 		Offset(offset).
+		Order(ent.Desc(post.FieldUpVotes)).
 		Order(ent.Desc(post.FieldCreatedAt)).
 		AllX(ctx)
 }

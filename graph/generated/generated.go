@@ -70,11 +70,12 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateCommunity func(childComplexity int, input model.CreateCommunityInput) int
-		CreatePost      func(childComplexity int, input model.CreatePostInput) int
-		Login           func(childComplexity int, input model.UserLoginInput) int
-		Register        func(childComplexity int, input model.UserRegisterInput) int
-		SignOut         func(childComplexity int) int
+		CreateCommunity  func(childComplexity int, input model.CreateCommunityInput) int
+		CreatePost       func(childComplexity int, input model.CreatePostInput) int
+		Login            func(childComplexity int, input model.UserLoginInput) int
+		Register         func(childComplexity int, input model.UserRegisterInput) int
+		SignOut          func(childComplexity int) int
+		UserCreateAction func(childComplexity int, input model.UserCreateActionInput) int
 	}
 
 	Post struct {
@@ -84,6 +85,8 @@ type ComplexityRoot struct {
 		CreatedAt        func(childComplexity int) int
 		DownVotes        func(childComplexity int) int
 		ID               func(childComplexity int) int
+		IsDownVoted      func(childComplexity int) int
+		IsUpVoted        func(childComplexity int) int
 		NumberOfComments func(childComplexity int) int
 		Owner            func(childComplexity int) int
 		Slug             func(childComplexity int) int
@@ -134,6 +137,15 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 		Username  func(childComplexity int) int
 	}
+
+	UserAction struct {
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Target     func(childComplexity int) int
+		TargetType func(childComplexity int) int
+		Type       func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+	}
 }
 
 type CommunityResolver interface {
@@ -145,6 +157,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.UserRegisterInput) (model.RegisterResult, error)
 	Login(ctx context.Context, input model.UserLoginInput) (*model.TokenPayloadDto, error)
 	SignOut(ctx context.Context) (*bool, error)
+	UserCreateAction(ctx context.Context, input model.UserCreateActionInput) (*model.UserAction, error)
 }
 type PostResolver interface {
 	Community(ctx context.Context, obj *model.Post) (*model.Community, error)
@@ -321,6 +334,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SignOut(childComplexity), true
 
+	case "Mutation.userCreateAction":
+		if e.complexity.Mutation.UserCreateAction == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_userCreateAction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UserCreateAction(childComplexity, args["input"].(model.UserCreateActionInput)), true
+
 	case "Post.community":
 		if e.complexity.Post.Community == nil {
 			break
@@ -362,6 +387,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Post.ID(childComplexity), true
+
+	case "Post.isDownVoted":
+		if e.complexity.Post.IsDownVoted == nil {
+			break
+		}
+
+		return e.complexity.Post.IsDownVoted(childComplexity), true
+
+	case "Post.isUpVoted":
+		if e.complexity.Post.IsUpVoted == nil {
+			break
+		}
+
+		return e.complexity.Post.IsUpVoted(childComplexity), true
 
 	case "Post.numberOfComments":
 		if e.complexity.Post.NumberOfComments == nil {
@@ -584,6 +623,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Username(childComplexity), true
 
+	case "UserAction.createdAt":
+		if e.complexity.UserAction.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserAction.CreatedAt(childComplexity), true
+
+	case "UserAction.id":
+		if e.complexity.UserAction.ID == nil {
+			break
+		}
+
+		return e.complexity.UserAction.ID(childComplexity), true
+
+	case "UserAction.target":
+		if e.complexity.UserAction.Target == nil {
+			break
+		}
+
+		return e.complexity.UserAction.Target(childComplexity), true
+
+	case "UserAction.targetType":
+		if e.complexity.UserAction.TargetType == nil {
+			break
+		}
+
+		return e.complexity.UserAction.TargetType(childComplexity), true
+
+	case "UserAction.type":
+		if e.complexity.UserAction.Type == nil {
+			break
+		}
+
+		return e.complexity.UserAction.Type(childComplexity), true
+
+	case "UserAction.updatedAt":
+		if e.complexity.UserAction.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.UserAction.UpdatedAt(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -728,6 +809,8 @@ input QueryPostInput {
     community: Community!
     owner: User!
     numberOfComments: Int!
+    isUpVoted: Boolean!
+    isDownVoted: Boolean!
 }
 
 type PostPagination {
@@ -772,6 +855,10 @@ type RegisterBadRequest {
 }`, BuiltIn: false},
 	{Name: "graph/schema/user/user.graphql", Input: `extend type Query {
     me: User
+}
+
+extend type Mutation {
+    userCreateAction(input: UserCreateActionInput!): UserAction!
 }`, BuiltIn: false},
 	{Name: "graph/schema/user/user.input.graphql", Input: `directive @binding(constraint: String!) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
 
@@ -784,6 +871,12 @@ input UserRegisterInput {
 input UserLoginInput {
     username: String! @binding(constraint: "required,max=50,min=6,alphanum,excludesall=0x7C!<>/;'")
     password: String! @binding(constraint: "required,max=100,min=6,excludesall=0x7C!<>/;'")
+}
+
+input UserCreateActionInput {
+    type: UserActionType!
+    target: ID!
+    targetType: UserActionTargetType!
 }`, BuiltIn: false},
 	{Name: "graph/schema/user/user.type.graphql", Input: `type User {
     id: ID!
@@ -792,6 +885,25 @@ input UserLoginInput {
     avatar: String
     createdAt: String!
     updatedAt: String!
+}
+
+type UserAction {
+    id: ID!
+    type: UserActionType!
+    target: ID!
+    targetType: UserActionTargetType!
+    createdAt: String!
+    updatedAt: String!
+}
+
+enum UserActionType {
+    UpVote
+    DownVote
+}
+
+enum UserActionTargetType {
+    POST
+    COMMENT
 }
 
 enum GENDER {
@@ -872,6 +984,21 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUserRegisterInput2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserRegisterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_userCreateAction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UserCreateActionInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUserCreateActionInput2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserCreateActionInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1663,6 +1790,48 @@ func (ec *executionContext) _Mutation_signOut(ctx context.Context, field graphql
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_userCreateAction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_userCreateAction_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UserCreateAction(rctx, args["input"].(model.UserCreateActionInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserAction)
+	fc.Result = res
+	return ec.marshalNUserAction2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserAction(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2116,6 +2285,76 @@ func (ec *executionContext) _Post_numberOfComments(ctx context.Context, field gr
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_isUpVoted(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsUpVoted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Post_isDownVoted(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDownVoted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostPagination_length(ctx context.Context, field graphql.CollectedField, obj *model.PostPagination) (ret graphql.Marshaler) {
@@ -2918,6 +3157,216 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	}()
 	fc := &graphql.FieldContext{
 		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_id(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_type(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.UserActionType)
+	fc.Result = res
+	return ec.marshalNUserActionType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_target(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Target, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_targetType(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.UserActionTargetType)
+	fc.Result = res
+	return ec.marshalNUserActionTargetType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionTargetType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserAction_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.UserAction) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UserAction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -4328,6 +4777,45 @@ func (ec *executionContext) unmarshalInputQueryPostInput(ctx context.Context, ob
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserCreateActionInput(ctx context.Context, obj interface{}) (model.UserCreateActionInput, error) {
+	var it model.UserCreateActionInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "type":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			it.Type, err = ec.unmarshalNUserActionType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "target":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("target"))
+			it.Target, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "targetType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetType"))
+			it.TargetType, err = ec.unmarshalNUserActionTargetType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionTargetType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserLoginInput(ctx context.Context, obj interface{}) (model.UserLoginInput, error) {
 	var it model.UserLoginInput
 	asMap := map[string]interface{}{}
@@ -4703,6 +5191,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "signOut":
 			out.Values[i] = ec._Mutation_signOut(ctx, field)
+		case "userCreateAction":
+			out.Values[i] = ec._Mutation_userCreateAction(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4817,6 +5310,16 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 				}
 				return res
 			})
+		case "isUpVoted":
+			out.Values[i] = ec._Post_isUpVoted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isDownVoted":
+			out.Values[i] = ec._Post_isDownVoted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5120,6 +5623,58 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "updatedAt":
 			out.Values[i] = ec._User_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userActionImplementors = []string{"UserAction"}
+
+func (ec *executionContext) _UserAction(ctx context.Context, sel ast.SelectionSet, obj *model.UserAction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userActionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserAction")
+		case "id":
+			out.Values[i] = ec._UserAction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._UserAction_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "target":
+			out.Values[i] = ec._UserAction_target(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "targetType":
+			out.Values[i] = ec._UserAction_targetType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._UserAction_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._UserAction_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5728,6 +6283,45 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋducnguyen96ᚋreddit�
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserAction2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserAction(ctx context.Context, sel ast.SelectionSet, v model.UserAction) graphql.Marshaler {
+	return ec._UserAction(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserAction2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserAction(ctx context.Context, sel ast.SelectionSet, v *model.UserAction) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UserAction(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUserActionTargetType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionTargetType(ctx context.Context, v interface{}) (model.UserActionTargetType, error) {
+	var res model.UserActionTargetType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserActionTargetType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionTargetType(ctx context.Context, sel ast.SelectionSet, v model.UserActionTargetType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNUserActionType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionType(ctx context.Context, v interface{}) (model.UserActionType, error) {
+	var res model.UserActionType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserActionType2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserActionType(ctx context.Context, sel ast.SelectionSet, v model.UserActionType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNUserCreateActionInput2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserCreateActionInput(ctx context.Context, v interface{}) (model.UserCreateActionInput, error) {
+	res, err := ec.unmarshalInputUserCreateActionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNUserLoginInput2githubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐUserLoginInput(ctx context.Context, v interface{}) (model.UserLoginInput, error) {

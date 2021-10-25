@@ -12,7 +12,7 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct{
-	UerService *user_services.UserService
+	UserService *user_services.UserService
 	AuthService *auth_services.AuthService
 	CommunityService *community_services.CommunityService
 	PostService *post_services.PostService

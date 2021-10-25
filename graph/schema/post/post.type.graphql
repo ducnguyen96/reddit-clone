@@ -12,6 +12,8 @@ type Post {
     community: Community!
     owner: User!
     numberOfComments: Int!
+    isUpVoted: Boolean!
+    isDownVoted: Boolean!
 }
 
 type PostPagination {

@@ -88,7 +88,7 @@ func main() {
 	postService := post_services.NewPostService(postRepo)
 
 	gr := generated.Config{Resolvers: &graph.Resolver{
-		UerService:       userService,
+		UserService:       userService,
 		AuthService:      authService,
 		CommunityService: communityService,
 		PostService:      postService,

@@ -32,6 +32,7 @@ func (User) Edges() []ent.Edge {
 		edge.From("my_communities", Community.Type).Ref("admins"),
 		edge.To("posts", Post.Type),
 		edge.To("comments", Comment.Type),
+		edge.To("actions", Action.Type),
 	}
 }
 

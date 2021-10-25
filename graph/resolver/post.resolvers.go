@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*model.Post, error) {
-	usr, err := r.UerService.GetCurrentUser(ctx)
+	usr, err := r.UserService.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 	if err != nil {
 		return nil, err
 	}
-	return utils.EntGoPostToGraphPost(po), nil
+	return utils.EntGoPostToGraphPost(po, false, false), nil
 }
 
 func (r *queryResolver) GetPost(ctx context.Context, slug string) (*model.Post, error) {
@@ -29,7 +29,14 @@ func (r *queryResolver) GetPost(ctx context.Context, slug string) (*model.Post, 
 	if c == nil {
 		return nil, errors.New("not found")
 	}
-	return utils.EntGoPostToGraphPost(c), nil
+
+	usr, _ := r.UserService.GetCurrentUser(ctx)
+	if usr == nil {
+		return utils.EntGoPostToGraphPost(c, false, false), nil
+	} else {
+		isUpVoted, isDownVoted := r.UserService.GetUserActionStatusForPost(ctx, c.ID, usr)
+		return utils.EntGoPostToGraphPost(c, isUpVoted, isDownVoted), nil
+	}
 }
 
 func (r *queryResolver) QueryPost(ctx context.Context, input model.QueryPostInput) (*model.PostPagination, error) {
@@ -39,8 +46,17 @@ func (r *queryResolver) QueryPost(ctx context.Context, input model.QueryPostInpu
 
 	result := make([]*model.Post, l)
 
-	for i, post := range c {
-		result[i] = utils.EntGoPostToGraphPost(post)
+	usr, _ := r.UserService.GetCurrentUser(ctx)
+
+	if usr == nil {
+		for i, post := range c {
+			result[i] = utils.EntGoPostToGraphPost(post, false ,false)
+		}
+	} else {
+		for i, post := range c {
+			isUpVoted, isDownVoted := r.UserService.GetUserActionStatusForPost(ctx, post.ID, usr)
+			result[i] = utils.EntGoPostToGraphPost(post, isUpVoted ,isDownVoted)
+		}
 	}
 
 	return &model.PostPagination{

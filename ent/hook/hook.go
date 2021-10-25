@@ -9,6 +9,19 @@ import (
 	"github.com/ducnguyen96/reddit-clone/ent"
 )
 
+// The ActionFunc type is an adapter to allow the use of ordinary
+// function as Action mutator.
+type ActionFunc func(context.Context, *ent.ActionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ActionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ActionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActionMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The CommentFunc type is an adapter to allow the use of ordinary
 // function as Comment mutator.
 type CommentFunc func(context.Context, *ent.CommentMutation) (ent.Value, error)

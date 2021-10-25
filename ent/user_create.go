@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/ducnguyen96/reddit-clone/ent/action"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/post"
@@ -155,6 +156,21 @@ func (uc *UserCreate) AddComments(c ...*Comment) *UserCreate {
 		ids[i] = c[i].ID
 	}
 	return uc.AddCommentIDs(ids...)
+}
+
+// AddActionIDs adds the "actions" edge to the Action entity by IDs.
+func (uc *UserCreate) AddActionIDs(ids ...uint64) *UserCreate {
+	uc.mutation.AddActionIDs(ids...)
+	return uc
+}
+
+// AddActions adds the "actions" edges to the Action entity.
+func (uc *UserCreate) AddActions(a ...*Action) *UserCreate {
+	ids := make([]uint64, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uc.AddActionIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -415,6 +431,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: comment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
 				},
 			},
 		}

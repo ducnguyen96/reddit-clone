@@ -8,6 +8,21 @@ import (
 )
 
 var (
+	// ActionsColumns holds the columns for the "actions" table.
+	ActionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "target", Type: field.TypeUint64},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"UP_VOTES", "DOWN_VOTES"}},
+		{Name: "target_type", Type: field.TypeEnum, Enums: []string{"POST", "COMMENT"}},
+	}
+	// ActionsTable holds the schema information for the "actions" table.
+	ActionsTable = &schema.Table{
+		Name:       "actions",
+		Columns:    ActionsColumns,
+		PrimaryKey: []*schema.Column{ActionsColumns[0]},
+	}
 	// CommentsColumns holds the columns for the "comments" table.
 	CommentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -277,8 +292,34 @@ var (
 			},
 		},
 	}
+	// UserActionsColumns holds the columns for the "user_actions" table.
+	UserActionsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "action_id", Type: field.TypeUint64},
+	}
+	// UserActionsTable holds the schema information for the "user_actions" table.
+	UserActionsTable = &schema.Table{
+		Name:       "user_actions",
+		Columns:    UserActionsColumns,
+		PrimaryKey: []*schema.Column{UserActionsColumns[0], UserActionsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_actions_user_id",
+				Columns:    []*schema.Column{UserActionsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_actions_action_id",
+				Columns:    []*schema.Column{UserActionsColumns[1]},
+				RefColumns: []*schema.Column{ActionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ActionsTable,
 		CommentsTable,
 		CommunitiesTable,
 		MediaTable,
@@ -292,6 +333,7 @@ var (
 		PostCommentsTable,
 		UserPostsTable,
 		UserCommentsTable,
+		UserActionsTable,
 	}
 )
 
@@ -310,4 +352,6 @@ func init() {
 	UserPostsTable.ForeignKeys[1].RefTable = PostsTable
 	UserCommentsTable.ForeignKeys[0].RefTable = UsersTable
 	UserCommentsTable.ForeignKeys[1].RefTable = CommentsTable
+	UserActionsTable.ForeignKeys[0].RefTable = UsersTable
+	UserActionsTable.ForeignKeys[1].RefTable = ActionsTable
 }

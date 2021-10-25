@@ -22,7 +22,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserRegiste
 		return &model.RegisterBadRequest{Errors: []*model.CustomError{customErr}}, nil
 	}
 
-	user, transaction, err := r.UerService.CreateUserTransaction(ctx, input)
+	user, transaction, err := r.UserService.CreateUserTransaction(ctx, input)
 	if err != nil {
 		customErr := &model.CustomError{
 			Message: fmt.Sprintf("%v", err),
@@ -34,7 +34,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserRegiste
 	token, err := r.AuthService.CreateToken(user.ID)
 
 	if err != nil {
-		err := r.UerService.Rollback(transaction, fmt.Errorf("failed creating token: %w", err))
+		err := r.UserService.Rollback(transaction, fmt.Errorf("failed creating token: %w", err))
 		return &model.RegisterInternalServerError{
 			Error: &model.CustomError{
 				Message: fmt.Sprintf("%v", err),
@@ -64,7 +64,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserRegiste
 }
 
 func (r *mutationResolver) Login(ctx context.Context, input model.UserLoginInput) (*model.TokenPayloadDto, error) {
-	usr, err := r.UerService.Login(ctx, input)
+	usr, err := r.UserService.Login(ctx, input)
 
 	if err != nil {
 		return nil, err

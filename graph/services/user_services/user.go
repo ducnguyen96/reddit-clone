@@ -94,6 +94,13 @@ func (s *UserService) Login(ctx context.Context, input model.UserLoginInput) (*e
 	return usr, nil
 }
 
+func (s *UserService) CreateAction(ctx context.Context, usr ent.User, input model.UserCreateActionInput) (*ent.Action, error) {
+	return s.repository.CreateAction(ctx, usr, input)
+}
+
+func (s *UserService) GetUserActionStatusForPost(ctx context.Context, postId uint64, usr *ent.User) (bool, bool) {
+	return s.repository.GetUserActionStatusForPost(ctx, postId, usr)
+}
 // Rollback calls to tx.Rollback and wraps the given error
 // with the rollback error if occurred.
 func (s *UserService) Rollback(tx *ent.Tx, err error) error {

@@ -43,9 +43,11 @@ type UserEdges struct {
 	Posts []*Post `json:"posts,omitempty"`
 	// Comments holds the value of the comments edge.
 	Comments []*Comment `json:"comments,omitempty"`
+	// Actions holds the value of the actions edge.
+	Actions []*Action `json:"actions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // CommunitiesOrErr returns the Communities value or an error if the edge
@@ -82,6 +84,15 @@ func (e UserEdges) CommentsOrErr() ([]*Comment, error) {
 		return e.Comments, nil
 	}
 	return nil, &NotLoadedError{edge: "comments"}
+}
+
+// ActionsOrErr returns the Actions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ActionsOrErr() ([]*Action, error) {
+	if e.loadedTypes[4] {
+		return e.Actions, nil
+	}
+	return nil, &NotLoadedError{edge: "actions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -177,6 +188,11 @@ func (u *User) QueryPosts() *PostQuery {
 // QueryComments queries the "comments" edge of the User entity.
 func (u *User) QueryComments() *CommentQuery {
 	return (&UserClient{config: u.config}).QueryComments(u)
+}
+
+// QueryActions queries the "actions" edge of the User entity.
+func (u *User) QueryActions() *ActionQuery {
+	return (&UserClient{config: u.config}).QueryActions(u)
 }
 
 // Update returns a builder for updating this User.

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/ducnguyen96/reddit-clone/ent/action"
 	"github.com/ducnguyen96/reddit-clone/ent/comment"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
 	"github.com/ducnguyen96/reddit-clone/ent/post"
@@ -148,6 +149,21 @@ func (uu *UserUpdate) AddComments(c ...*Comment) *UserUpdate {
 	return uu.AddCommentIDs(ids...)
 }
 
+// AddActionIDs adds the "actions" edge to the Action entity by IDs.
+func (uu *UserUpdate) AddActionIDs(ids ...uint64) *UserUpdate {
+	uu.mutation.AddActionIDs(ids...)
+	return uu
+}
+
+// AddActions adds the "actions" edges to the Action entity.
+func (uu *UserUpdate) AddActions(a ...*Action) *UserUpdate {
+	ids := make([]uint64, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.AddActionIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -235,6 +251,27 @@ func (uu *UserUpdate) RemoveComments(c ...*Comment) *UserUpdate {
 		ids[i] = c[i].ID
 	}
 	return uu.RemoveCommentIDs(ids...)
+}
+
+// ClearActions clears all "actions" edges to the Action entity.
+func (uu *UserUpdate) ClearActions() *UserUpdate {
+	uu.mutation.ClearActions()
+	return uu
+}
+
+// RemoveActionIDs removes the "actions" edge to Action entities by IDs.
+func (uu *UserUpdate) RemoveActionIDs(ids ...uint64) *UserUpdate {
+	uu.mutation.RemoveActionIDs(ids...)
+	return uu
+}
+
+// RemoveActions removes "actions" edges to Action entities.
+func (uu *UserUpdate) RemoveActions(a ...*Action) *UserUpdate {
+	ids := make([]uint64, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.RemoveActionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -603,6 +640,60 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedActionsIDs(); len(nodes) > 0 && !uu.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -740,6 +831,21 @@ func (uuo *UserUpdateOne) AddComments(c ...*Comment) *UserUpdateOne {
 	return uuo.AddCommentIDs(ids...)
 }
 
+// AddActionIDs adds the "actions" edge to the Action entity by IDs.
+func (uuo *UserUpdateOne) AddActionIDs(ids ...uint64) *UserUpdateOne {
+	uuo.mutation.AddActionIDs(ids...)
+	return uuo
+}
+
+// AddActions adds the "actions" edges to the Action entity.
+func (uuo *UserUpdateOne) AddActions(a ...*Action) *UserUpdateOne {
+	ids := make([]uint64, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.AddActionIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -827,6 +933,27 @@ func (uuo *UserUpdateOne) RemoveComments(c ...*Comment) *UserUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return uuo.RemoveCommentIDs(ids...)
+}
+
+// ClearActions clears all "actions" edges to the Action entity.
+func (uuo *UserUpdateOne) ClearActions() *UserUpdateOne {
+	uuo.mutation.ClearActions()
+	return uuo
+}
+
+// RemoveActionIDs removes the "actions" edge to Action entities by IDs.
+func (uuo *UserUpdateOne) RemoveActionIDs(ids ...uint64) *UserUpdateOne {
+	uuo.mutation.RemoveActionIDs(ids...)
+	return uuo
+}
+
+// RemoveActions removes "actions" edges to Action entities.
+func (uuo *UserUpdateOne) RemoveActions(a ...*Action) *UserUpdateOne {
+	ids := make([]uint64, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.RemoveActionIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1211,6 +1338,60 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: comment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedActionsIDs(); len(nodes) > 0 && !uuo.mutation.ActionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ActionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.ActionsTable,
+			Columns: user.ActionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: action.FieldID,
 				},
 			},
 		}

@@ -33,6 +33,8 @@ const (
 	EdgePosts = "posts"
 	// EdgeComments holds the string denoting the comments edge name in mutations.
 	EdgeComments = "comments"
+	// EdgeActions holds the string denoting the actions edge name in mutations.
+	EdgeActions = "actions"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// CommunitiesTable is the table that holds the communities relation/edge. The primary key declared below.
@@ -55,6 +57,11 @@ const (
 	// CommentsInverseTable is the table name for the Comment entity.
 	// It exists in this package in order to avoid circular dependency with the "comment" package.
 	CommentsInverseTable = "comments"
+	// ActionsTable is the table that holds the actions relation/edge. The primary key declared below.
+	ActionsTable = "user_actions"
+	// ActionsInverseTable is the table name for the Action entity.
+	// It exists in this package in order to avoid circular dependency with the "action" package.
+	ActionsInverseTable = "actions"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -81,6 +88,9 @@ var (
 	// CommentsPrimaryKey and CommentsColumn2 are the table columns denoting the
 	// primary key for the comments relation (M2M).
 	CommentsPrimaryKey = []string{"user_id", "comment_id"}
+	// ActionsPrimaryKey and ActionsColumn2 are the table columns denoting the
+	// primary key for the actions relation (M2M).
+	ActionsPrimaryKey = []string{"user_id", "action_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
