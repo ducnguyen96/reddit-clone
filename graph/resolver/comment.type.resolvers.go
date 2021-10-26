@@ -13,7 +13,6 @@ import (
 
 func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]*model.Comment, error) {
 	usr, _ := r.UserService.GetCurrentUser(ctx)
-	usrMapped := utils.MapEntGoUserToGraphUser(usr)
 
 	limit := 99999
 	page := 1
@@ -35,8 +34,8 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]*m
 		} else {
 			isUpVoted, isDownVoted := r.CommentService.GetUserActionStatusForComment(ctx, comment.ID, usr)
 			resultComments[i] = utils.EntCommentToGraph(comment, isUpVoted, isDownVoted)
-			resultComments[i].Owner = usrMapped
 		}
+		resultComments[i].Owner = utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *comment))
 	}
 	return resultComments, nil
 }

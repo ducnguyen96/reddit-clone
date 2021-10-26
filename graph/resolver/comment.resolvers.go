@@ -32,7 +32,6 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.Create
 
 func (r *queryResolver) QueryComment(ctx context.Context, input model.QueryCommentInput) (*model.CommentPagination, error) {
 	usr, _ := r.UserService.GetCurrentUser(ctx)
-	usrMapped := utils.MapEntGoUserToGraphUser(usr)
 
 	comments := r.CommentService.Query(ctx, input)
 	length := len(comments)
@@ -52,8 +51,8 @@ func (r *queryResolver) QueryComment(ctx context.Context, input model.QueryComme
 		} else {
 			isUpVoted, isDownVoted := r.CommentService.GetUserActionStatusForComment(ctx, comment.ID, usr)
 			resultComments[i] = utils.EntCommentToGraph(comment, isUpVoted, isDownVoted)
-			resultComments[i].Owner = usrMapped
 		}
+		resultComments[i].Owner = utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *comment))
 	}
 
 	return &model.CommentPagination{

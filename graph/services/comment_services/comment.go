@@ -26,3 +26,7 @@ func (c *CommentService) Query(ctx context.Context, input model.QueryCommentInpu
 func (c *CommentService) GetUserActionStatusForComment(ctx context.Context, commentID uint64, usr *ent.User) (bool, bool) {
 	return c.repository.GetUserActionStatusForComment(ctx, commentID, usr)
 }
+
+func (c *CommentService) GetOwner(ctx context.Context, comment ent.Comment) *ent.User {
+	return c.repository.GetOwner(ctx, comment)
+}
