@@ -27,10 +27,16 @@ const (
 	FieldUpVotes = "up_votes"
 	// FieldDownVotes holds the string denoting the down_votes field in the database.
 	FieldDownVotes = "down_votes"
+	// FieldPostID holds the string denoting the post_id field in the database.
+	FieldPostID = "post_id"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
+	// EdgeParent holds the string denoting the parent edge name in mutations.
+	EdgeParent = "parent"
+	// EdgeChildren holds the string denoting the children edge name in mutations.
+	EdgeChildren = "children"
 	// Table holds the table name of the comment in the database.
 	Table = "comments"
 	// PostsTable is the table that holds the posts relation/edge. The primary key declared below.
@@ -43,6 +49,14 @@ const (
 	// UserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
+	// ParentTable is the table that holds the parent relation/edge.
+	ParentTable = "comments"
+	// ParentColumn is the table column denoting the parent relation/edge.
+	ParentColumn = "comment_children"
+	// ChildrenTable is the table that holds the children relation/edge.
+	ChildrenTable = "comments"
+	// ChildrenColumn is the table column denoting the children relation/edge.
+	ChildrenColumn = "comment_children"
 )
 
 // Columns holds all SQL columns for comment fields.
@@ -54,6 +68,13 @@ var Columns = []string{
 	FieldContentMode,
 	FieldUpVotes,
 	FieldDownVotes,
+	FieldPostID,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "comments"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"comment_children",
 }
 
 var (
@@ -69,6 +90,11 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

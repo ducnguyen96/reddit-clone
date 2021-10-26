@@ -28,8 +28,11 @@ type CommentQuery struct {
 	fields     []string
 	predicates []predicate.Comment
 	// eager-loading edges.
-	withPosts *PostQuery
-	withUser  *UserQuery
+	withPosts    *PostQuery
+	withUser     *UserQuery
+	withParent   *CommentQuery
+	withChildren *CommentQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -103,6 +106,50 @@ func (cq *CommentQuery) QueryUser() *UserQuery {
 			sqlgraph.From(comment.Table, comment.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, comment.UserTable, comment.UserPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (cq *CommentQuery) QueryParent() *CommentQuery {
+	query := &CommentQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, selector),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, comment.ParentTable, comment.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChildren chains the current query on the "children" edge.
+func (cq *CommentQuery) QueryChildren() *CommentQuery {
+	query := &CommentQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comment.Table, comment.FieldID, selector),
+			sqlgraph.To(comment.Table, comment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, comment.ChildrenTable, comment.ChildrenColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -286,13 +333,15 @@ func (cq *CommentQuery) Clone() *CommentQuery {
 		return nil
 	}
 	return &CommentQuery{
-		config:     cq.config,
-		limit:      cq.limit,
-		offset:     cq.offset,
-		order:      append([]OrderFunc{}, cq.order...),
-		predicates: append([]predicate.Comment{}, cq.predicates...),
-		withPosts:  cq.withPosts.Clone(),
-		withUser:   cq.withUser.Clone(),
+		config:       cq.config,
+		limit:        cq.limit,
+		offset:       cq.offset,
+		order:        append([]OrderFunc{}, cq.order...),
+		predicates:   append([]predicate.Comment{}, cq.predicates...),
+		withPosts:    cq.withPosts.Clone(),
+		withUser:     cq.withUser.Clone(),
+		withParent:   cq.withParent.Clone(),
+		withChildren: cq.withChildren.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
@@ -318,6 +367,28 @@ func (cq *CommentQuery) WithUser(opts ...func(*UserQuery)) *CommentQuery {
 		opt(query)
 	}
 	cq.withUser = query
+	return cq
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CommentQuery) WithParent(opts ...func(*CommentQuery)) *CommentQuery {
+	query := &CommentQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withParent = query
+	return cq
+}
+
+// WithChildren tells the query-builder to eager-load the nodes that are connected to
+// the "children" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CommentQuery) WithChildren(opts ...func(*CommentQuery)) *CommentQuery {
+	query := &CommentQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withChildren = query
 	return cq
 }
 
@@ -385,12 +456,21 @@ func (cq *CommentQuery) prepareQuery(ctx context.Context) error {
 func (cq *CommentQuery) sqlAll(ctx context.Context) ([]*Comment, error) {
 	var (
 		nodes       = []*Comment{}
+		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			cq.withPosts != nil,
 			cq.withUser != nil,
+			cq.withParent != nil,
+			cq.withChildren != nil,
 		}
 	)
+	if cq.withParent != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, comment.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Comment{config: cq.config}
 		nodes = append(nodes, node)
@@ -538,6 +618,64 @@ func (cq *CommentQuery) sqlAll(ctx context.Context) ([]*Comment, error) {
 			for i := range nodes {
 				nodes[i].Edges.User = append(nodes[i].Edges.User, n)
 			}
+		}
+	}
+
+	if query := cq.withParent; query != nil {
+		ids := make([]uint64, 0, len(nodes))
+		nodeids := make(map[uint64][]*Comment)
+		for i := range nodes {
+			if nodes[i].comment_children == nil {
+				continue
+			}
+			fk := *nodes[i].comment_children
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(comment.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "comment_children" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Parent = n
+			}
+		}
+	}
+
+	if query := cq.withChildren; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[uint64]*Comment)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Children = []*Comment{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Comment(func(s *sql.Selector) {
+			s.Where(sql.InValues(comment.ChildrenColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.comment_children
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "comment_children" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "comment_children" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Children = append(node.Edges.Children, n)
 		}
 	}
 

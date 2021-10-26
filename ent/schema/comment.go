@@ -19,6 +19,7 @@ func (Comment) Fields() []ent.Field {
 		field.Enum("content_mode").GoType(enums.InputContentMode(0)),
 		field.Int("up_votes").Default(0),
 		field.Int("down_votes").Default(0),
+		field.Uint64("post_id"),
 	}
 }
 
@@ -27,6 +28,9 @@ func (Comment) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("posts", Post.Type).Ref("comments").Required(),
 		edge.From("user", User.Type).Ref("comments").Required(),
+		edge.To("children", Comment.Type).
+			From("parent").
+			Unique(),
 	}
 }
 

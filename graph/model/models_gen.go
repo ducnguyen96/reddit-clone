@@ -12,6 +12,27 @@ type RegisterResult interface {
 	IsRegisterResult()
 }
 
+type Comment struct {
+	ID          string           `json:"id"`
+	PostID      string           `json:"postID"`
+	Content     string           `json:"content"`
+	ContentMode InputContentMode `json:"contentMode"`
+	CreatedAt   string           `json:"createdAt"`
+	UpdatedAt   string           `json:"updatedAt"`
+	UpVotes     int              `json:"upVotes"`
+	DownVotes   int              `json:"downVotes"`
+	Owner       *User            `json:"owner"`
+	IsUpVoted   bool             `json:"isUpVoted"`
+	IsDownVoted bool             `json:"isDownVoted"`
+	Replies     []*Comment       `json:"replies"`
+}
+
+type CommentPagination struct {
+	Length      int        `json:"length"`
+	CurrentPage int        `json:"currentPage"`
+	Comments    []*Comment `json:"comments"`
+}
+
 type Community struct {
 	ID             string        `json:"id"`
 	Name           string        `json:"name"`
@@ -27,6 +48,13 @@ type CommunityPagination struct {
 	Length      int          `json:"length"`
 	CurrentPage int          `json:"currentPage"`
 	Communities []*Community `json:"communities"`
+}
+
+type CreateCommentInput struct {
+	PostID      string           `json:"postID"`
+	ParentID    *string          `json:"parentID"`
+	Content     string           `json:"content"`
+	ContentMode InputContentMode `json:"contentMode"`
 }
 
 type CreateCommunityInput struct {
@@ -70,6 +98,13 @@ type PostPagination struct {
 	Length      int     `json:"length"`
 	CurrentPage int     `json:"currentPage"`
 	Posts       []*Post `json:"posts"`
+}
+
+type QueryCommentInput struct {
+	PostID   string  `json:"postID"`
+	ParentID *string `json:"parentID"`
+	Limit    *int    `json:"limit"`
+	Page     *int    `json:"page"`
 }
 
 type QueryCommunityInput struct {

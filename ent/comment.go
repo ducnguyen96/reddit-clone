@@ -29,9 +29,12 @@ type Comment struct {
 	UpVotes int `json:"up_votes,omitempty"`
 	// DownVotes holds the value of the "down_votes" field.
 	DownVotes int `json:"down_votes,omitempty"`
+	// PostID holds the value of the "post_id" field.
+	PostID uint64 `json:"post_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CommentQuery when eager-loading is set.
-	Edges CommentEdges `json:"edges"`
+	Edges            CommentEdges `json:"edges"`
+	comment_children *uint64
 }
 
 // CommentEdges holds the relations/edges for other nodes in the graph.
@@ -40,9 +43,13 @@ type CommentEdges struct {
 	Posts []*Post `json:"posts,omitempty"`
 	// User holds the value of the user edge.
 	User []*User `json:"user,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *Comment `json:"parent,omitempty"`
+	// Children holds the value of the children edge.
+	Children []*Comment `json:"children,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // PostsOrErr returns the Posts value or an error if the edge
@@ -63,6 +70,29 @@ func (e CommentEdges) UserOrErr() ([]*User, error) {
 	return nil, &NotLoadedError{edge: "user"}
 }
 
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CommentEdges) ParentOrErr() (*Comment, error) {
+	if e.loadedTypes[2] {
+		if e.Parent == nil {
+			// The edge parent was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: comment.Label}
+		}
+		return e.Parent, nil
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// ChildrenOrErr returns the Children value or an error if the edge
+// was not loaded in eager-loading.
+func (e CommentEdges) ChildrenOrErr() ([]*Comment, error) {
+	if e.loadedTypes[3] {
+		return e.Children, nil
+	}
+	return nil, &NotLoadedError{edge: "children"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Comment) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -70,12 +100,14 @@ func (*Comment) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case comment.FieldContentMode:
 			values[i] = new(enums.InputContentMode)
-		case comment.FieldID, comment.FieldUpVotes, comment.FieldDownVotes:
+		case comment.FieldID, comment.FieldUpVotes, comment.FieldDownVotes, comment.FieldPostID:
 			values[i] = new(sql.NullInt64)
 		case comment.FieldContent:
 			values[i] = new(sql.NullString)
 		case comment.FieldCreatedAt, comment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case comment.ForeignKeys[0]: // comment_children
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Comment", columns[i])
 		}
@@ -133,6 +165,19 @@ func (c *Comment) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				c.DownVotes = int(value.Int64)
 			}
+		case comment.FieldPostID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field post_id", values[i])
+			} else if value.Valid {
+				c.PostID = uint64(value.Int64)
+			}
+		case comment.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field comment_children", value)
+			} else if value.Valid {
+				c.comment_children = new(uint64)
+				*c.comment_children = uint64(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -146,6 +191,16 @@ func (c *Comment) QueryPosts() *PostQuery {
 // QueryUser queries the "user" edge of the Comment entity.
 func (c *Comment) QueryUser() *UserQuery {
 	return (&CommentClient{config: c.config}).QueryUser(c)
+}
+
+// QueryParent queries the "parent" edge of the Comment entity.
+func (c *Comment) QueryParent() *CommentQuery {
+	return (&CommentClient{config: c.config}).QueryParent(c)
+}
+
+// QueryChildren queries the "children" edge of the Comment entity.
+func (c *Comment) QueryChildren() *CommentQuery {
+	return (&CommentClient{config: c.config}).QueryChildren(c)
 }
 
 // Update returns a builder for updating this Comment.
@@ -183,6 +238,8 @@ func (c *Comment) String() string {
 	builder.WriteString(fmt.Sprintf("%v", c.UpVotes))
 	builder.WriteString(", down_votes=")
 	builder.WriteString(fmt.Sprintf("%v", c.DownVotes))
+	builder.WriteString(", post_id=")
+	builder.WriteString(fmt.Sprintf("%v", c.PostID))
 	builder.WriteByte(')')
 	return builder.String()
 }

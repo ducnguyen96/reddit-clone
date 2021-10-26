@@ -32,12 +32,22 @@ var (
 		{Name: "content_mode", Type: field.TypeEnum, Enums: []string{"MarkDown", "TextEditor"}},
 		{Name: "up_votes", Type: field.TypeInt, Default: 0},
 		{Name: "down_votes", Type: field.TypeInt, Default: 0},
+		{Name: "post_id", Type: field.TypeUint64},
+		{Name: "comment_children", Type: field.TypeUint64, Nullable: true},
 	}
 	// CommentsTable holds the schema information for the "comments" table.
 	CommentsTable = &schema.Table{
 		Name:       "comments",
 		Columns:    CommentsColumns,
 		PrimaryKey: []*schema.Column{CommentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "comments_comments_children",
+				Columns:    []*schema.Column{CommentsColumns[8]},
+				RefColumns: []*schema.Column{CommentsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// CommunitiesColumns holds the columns for the "communities" table.
 	CommunitiesColumns = []*schema.Column{
@@ -338,6 +348,7 @@ var (
 )
 
 func init() {
+	CommentsTable.ForeignKeys[0].RefTable = CommentsTable
 	CommunityUsersTable.ForeignKeys[0].RefTable = CommunitiesTable
 	CommunityUsersTable.ForeignKeys[1].RefTable = UsersTable
 	CommunityAdminsTable.ForeignKeys[0].RefTable = CommunitiesTable

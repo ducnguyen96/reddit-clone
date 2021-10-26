@@ -70,3 +70,7 @@ models:
     fields:
       numberOfMember:
         resolver: true
+  Comment:
+    fields:
+      replies:
+        resolver: true

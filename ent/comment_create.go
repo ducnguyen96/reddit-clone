@@ -91,6 +91,12 @@ func (cc *CommentCreate) SetNillableDownVotes(i *int) *CommentCreate {
 	return cc
 }
 
+// SetPostID sets the "post_id" field.
+func (cc *CommentCreate) SetPostID(u uint64) *CommentCreate {
+	cc.mutation.SetPostID(u)
+	return cc
+}
+
 // SetID sets the "id" field.
 func (cc *CommentCreate) SetID(u uint64) *CommentCreate {
 	cc.mutation.SetID(u)
@@ -125,6 +131,40 @@ func (cc *CommentCreate) AddUser(u ...*User) *CommentCreate {
 		ids[i] = u[i].ID
 	}
 	return cc.AddUserIDs(ids...)
+}
+
+// SetParentID sets the "parent" edge to the Comment entity by ID.
+func (cc *CommentCreate) SetParentID(id uint64) *CommentCreate {
+	cc.mutation.SetParentID(id)
+	return cc
+}
+
+// SetNillableParentID sets the "parent" edge to the Comment entity by ID if the given value is not nil.
+func (cc *CommentCreate) SetNillableParentID(id *uint64) *CommentCreate {
+	if id != nil {
+		cc = cc.SetParentID(*id)
+	}
+	return cc
+}
+
+// SetParent sets the "parent" edge to the Comment entity.
+func (cc *CommentCreate) SetParent(c *Comment) *CommentCreate {
+	return cc.SetParentID(c.ID)
+}
+
+// AddChildIDs adds the "children" edge to the Comment entity by IDs.
+func (cc *CommentCreate) AddChildIDs(ids ...uint64) *CommentCreate {
+	cc.mutation.AddChildIDs(ids...)
+	return cc
+}
+
+// AddChildren adds the "children" edges to the Comment entity.
+func (cc *CommentCreate) AddChildren(c ...*Comment) *CommentCreate {
+	ids := make([]uint64, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cc.AddChildIDs(ids...)
 }
 
 // Mutation returns the CommentMutation object of the builder.
@@ -250,6 +290,9 @@ func (cc *CommentCreate) check() error {
 	if _, ok := cc.mutation.DownVotes(); !ok {
 		return &ValidationError{Name: "down_votes", err: errors.New(`ent: missing required field "down_votes"`)}
 	}
+	if _, ok := cc.mutation.PostID(); !ok {
+		return &ValidationError{Name: "post_id", err: errors.New(`ent: missing required field "post_id"`)}
+	}
 	if len(cc.mutation.PostsIDs()) == 0 {
 		return &ValidationError{Name: "posts", err: errors.New("ent: missing required edge \"posts\"")}
 	}
@@ -337,6 +380,14 @@ func (cc *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
 		})
 		_node.DownVotes = value
 	}
+	if value, ok := cc.mutation.PostID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: comment.FieldPostID,
+		})
+		_node.PostID = value
+	}
 	if nodes := cc.mutation.PostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -367,6 +418,45 @@ func (cc *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUint64,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   comment.ParentTable,
+			Columns: []string{comment.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: comment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.comment_children = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   comment.ChildrenTable,
+			Columns: []string{comment.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint64,
+					Column: comment.FieldID,
 				},
 			},
 		}

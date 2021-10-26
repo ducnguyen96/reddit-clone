@@ -1,0 +1,20 @@
+type Comment {
+    id: ID!
+    postID: ID!
+    content: String!
+    contentMode: InputContentMode!
+    createdAt: String!
+    updatedAt: String!
+    upVotes: Int!
+    downVotes: Int!
+    owner: User!
+    isUpVoted: Boolean!
+    isDownVoted: Boolean!
+    replies: [Comment!]!
+}
+
+type CommentPagination {
+    length: Int!
+    currentPage: Int!
+    comments: [Comment!]!
+}

@@ -1,0 +1,13 @@
+input CreateCommentInput {
+    postID: ID!
+    parentID: ID
+    content: String!
+    contentMode: InputContentMode!
+}
+
+input QueryCommentInput {
+    postID: ID!
+    parentID: ID
+    limit: Int @binding(constraint: "numeric")
+    page: Int @binding(constraint: "numeric")
+}

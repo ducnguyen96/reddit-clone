@@ -154,3 +154,18 @@ func EntUserActionTargetTypeToGraph(targetType enums.UserActionTargetType) model
 		return model.UserActionTargetTypeComment
 	}
 }
+
+func EntCommentToGraph(comment *ent.Comment, isUpVoted bool, isDownVoted bool) *model.Comment {
+	return &model.Comment{
+		ID:          Uint64ToString(comment.ID),
+		Content:     comment.Content,
+		ContentMode: EntGoContentModeToGraphContentMode(comment.ContentMode),
+		CreatedAt:   comment.CreatedAt.String(),
+		UpdatedAt:   comment.UpdatedAt.String(),
+		UpVotes:     comment.UpVotes,
+		DownVotes:   comment.DownVotes,
+		IsUpVoted:   isUpVoted,
+		IsDownVoted: isDownVoted,
+		PostID: Uint64ToString(comment.PostID),
+	}
+}

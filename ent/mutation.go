@@ -685,27 +685,34 @@ func (m *ActionMutation) ResetEdge(name string) error {
 // CommentMutation represents an operation that mutates the Comment nodes in the graph.
 type CommentMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	content       *string
-	content_mode  *enums.InputContentMode
-	up_votes      *int
-	addup_votes   *int
-	down_votes    *int
-	adddown_votes *int
-	clearedFields map[string]struct{}
-	posts         map[uint64]struct{}
-	removedposts  map[uint64]struct{}
-	clearedposts  bool
-	user          map[uint64]struct{}
-	removeduser   map[uint64]struct{}
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*Comment, error)
-	predicates    []predicate.Comment
+	op              Op
+	typ             string
+	id              *uint64
+	created_at      *time.Time
+	updated_at      *time.Time
+	content         *string
+	content_mode    *enums.InputContentMode
+	up_votes        *int
+	addup_votes     *int
+	down_votes      *int
+	adddown_votes   *int
+	post_id         *uint64
+	addpost_id      *uint64
+	clearedFields   map[string]struct{}
+	posts           map[uint64]struct{}
+	removedposts    map[uint64]struct{}
+	clearedposts    bool
+	user            map[uint64]struct{}
+	removeduser     map[uint64]struct{}
+	cleareduser     bool
+	parent          *uint64
+	clearedparent   bool
+	children        map[uint64]struct{}
+	removedchildren map[uint64]struct{}
+	clearedchildren bool
+	done            bool
+	oldValue        func(context.Context) (*Comment, error)
+	predicates      []predicate.Comment
 }
 
 var _ ent.Mutation = (*CommentMutation)(nil)
@@ -1049,6 +1056,62 @@ func (m *CommentMutation) ResetDownVotes() {
 	m.adddown_votes = nil
 }
 
+// SetPostID sets the "post_id" field.
+func (m *CommentMutation) SetPostID(u uint64) {
+	m.post_id = &u
+	m.addpost_id = nil
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *CommentMutation) PostID() (r uint64, exists bool) {
+	v := m.post_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the Comment entity.
+// If the Comment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CommentMutation) OldPostID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// AddPostID adds u to the "post_id" field.
+func (m *CommentMutation) AddPostID(u uint64) {
+	if m.addpost_id != nil {
+		*m.addpost_id += u
+	} else {
+		m.addpost_id = &u
+	}
+}
+
+// AddedPostID returns the value that was added to the "post_id" field in this mutation.
+func (m *CommentMutation) AddedPostID() (r uint64, exists bool) {
+	v := m.addpost_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *CommentMutation) ResetPostID() {
+	m.post_id = nil
+	m.addpost_id = nil
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by ids.
 func (m *CommentMutation) AddPostIDs(ids ...uint64) {
 	if m.posts == nil {
@@ -1157,6 +1220,99 @@ func (m *CommentMutation) ResetUser() {
 	m.removeduser = nil
 }
 
+// SetParentID sets the "parent" edge to the Comment entity by id.
+func (m *CommentMutation) SetParentID(id uint64) {
+	m.parent = &id
+}
+
+// ClearParent clears the "parent" edge to the Comment entity.
+func (m *CommentMutation) ClearParent() {
+	m.clearedparent = true
+}
+
+// ParentCleared reports if the "parent" edge to the Comment entity was cleared.
+func (m *CommentMutation) ParentCleared() bool {
+	return m.clearedparent
+}
+
+// ParentID returns the "parent" edge ID in the mutation.
+func (m *CommentMutation) ParentID() (id uint64, exists bool) {
+	if m.parent != nil {
+		return *m.parent, true
+	}
+	return
+}
+
+// ParentIDs returns the "parent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ParentID instead. It exists only for internal usage by the builders.
+func (m *CommentMutation) ParentIDs() (ids []uint64) {
+	if id := m.parent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParent resets all changes to the "parent" edge.
+func (m *CommentMutation) ResetParent() {
+	m.parent = nil
+	m.clearedparent = false
+}
+
+// AddChildIDs adds the "children" edge to the Comment entity by ids.
+func (m *CommentMutation) AddChildIDs(ids ...uint64) {
+	if m.children == nil {
+		m.children = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		m.children[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChildren clears the "children" edge to the Comment entity.
+func (m *CommentMutation) ClearChildren() {
+	m.clearedchildren = true
+}
+
+// ChildrenCleared reports if the "children" edge to the Comment entity was cleared.
+func (m *CommentMutation) ChildrenCleared() bool {
+	return m.clearedchildren
+}
+
+// RemoveChildIDs removes the "children" edge to the Comment entity by IDs.
+func (m *CommentMutation) RemoveChildIDs(ids ...uint64) {
+	if m.removedchildren == nil {
+		m.removedchildren = make(map[uint64]struct{})
+	}
+	for i := range ids {
+		delete(m.children, ids[i])
+		m.removedchildren[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChildren returns the removed IDs of the "children" edge to the Comment entity.
+func (m *CommentMutation) RemovedChildrenIDs() (ids []uint64) {
+	for id := range m.removedchildren {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChildrenIDs returns the "children" edge IDs in the mutation.
+func (m *CommentMutation) ChildrenIDs() (ids []uint64) {
+	for id := range m.children {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChildren resets all changes to the "children" edge.
+func (m *CommentMutation) ResetChildren() {
+	m.children = nil
+	m.clearedchildren = false
+	m.removedchildren = nil
+}
+
 // Where appends a list predicates to the CommentMutation builder.
 func (m *CommentMutation) Where(ps ...predicate.Comment) {
 	m.predicates = append(m.predicates, ps...)
@@ -1176,7 +1332,7 @@ func (m *CommentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CommentMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, comment.FieldCreatedAt)
 	}
@@ -1194,6 +1350,9 @@ func (m *CommentMutation) Fields() []string {
 	}
 	if m.down_votes != nil {
 		fields = append(fields, comment.FieldDownVotes)
+	}
+	if m.post_id != nil {
+		fields = append(fields, comment.FieldPostID)
 	}
 	return fields
 }
@@ -1215,6 +1374,8 @@ func (m *CommentMutation) Field(name string) (ent.Value, bool) {
 		return m.UpVotes()
 	case comment.FieldDownVotes:
 		return m.DownVotes()
+	case comment.FieldPostID:
+		return m.PostID()
 	}
 	return nil, false
 }
@@ -1236,6 +1397,8 @@ func (m *CommentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpVotes(ctx)
 	case comment.FieldDownVotes:
 		return m.OldDownVotes(ctx)
+	case comment.FieldPostID:
+		return m.OldPostID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Comment field %s", name)
 }
@@ -1287,6 +1450,13 @@ func (m *CommentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDownVotes(v)
 		return nil
+	case comment.FieldPostID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Comment field %s", name)
 }
@@ -1301,6 +1471,9 @@ func (m *CommentMutation) AddedFields() []string {
 	if m.adddown_votes != nil {
 		fields = append(fields, comment.FieldDownVotes)
 	}
+	if m.addpost_id != nil {
+		fields = append(fields, comment.FieldPostID)
+	}
 	return fields
 }
 
@@ -1313,6 +1486,8 @@ func (m *CommentMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedUpVotes()
 	case comment.FieldDownVotes:
 		return m.AddedDownVotes()
+	case comment.FieldPostID:
+		return m.AddedPostID()
 	}
 	return nil, false
 }
@@ -1335,6 +1510,13 @@ func (m *CommentMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDownVotes(v)
+		return nil
+	case comment.FieldPostID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPostID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Comment numeric field %s", name)
@@ -1381,18 +1563,27 @@ func (m *CommentMutation) ResetField(name string) error {
 	case comment.FieldDownVotes:
 		m.ResetDownVotes()
 		return nil
+	case comment.FieldPostID:
+		m.ResetPostID()
+		return nil
 	}
 	return fmt.Errorf("unknown Comment field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CommentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.posts != nil {
 		edges = append(edges, comment.EdgePosts)
 	}
 	if m.user != nil {
 		edges = append(edges, comment.EdgeUser)
+	}
+	if m.parent != nil {
+		edges = append(edges, comment.EdgeParent)
+	}
+	if m.children != nil {
+		edges = append(edges, comment.EdgeChildren)
 	}
 	return edges
 }
@@ -1413,18 +1604,31 @@ func (m *CommentMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case comment.EdgeParent:
+		if id := m.parent; id != nil {
+			return []ent.Value{*id}
+		}
+	case comment.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.children))
+		for id := range m.children {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CommentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.removedposts != nil {
 		edges = append(edges, comment.EdgePosts)
 	}
 	if m.removeduser != nil {
 		edges = append(edges, comment.EdgeUser)
+	}
+	if m.removedchildren != nil {
+		edges = append(edges, comment.EdgeChildren)
 	}
 	return edges
 }
@@ -1445,18 +1649,30 @@ func (m *CommentMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case comment.EdgeChildren:
+		ids := make([]ent.Value, 0, len(m.removedchildren))
+		for id := range m.removedchildren {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CommentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.clearedposts {
 		edges = append(edges, comment.EdgePosts)
 	}
 	if m.cleareduser {
 		edges = append(edges, comment.EdgeUser)
+	}
+	if m.clearedparent {
+		edges = append(edges, comment.EdgeParent)
+	}
+	if m.clearedchildren {
+		edges = append(edges, comment.EdgeChildren)
 	}
 	return edges
 }
@@ -1469,6 +1685,10 @@ func (m *CommentMutation) EdgeCleared(name string) bool {
 		return m.clearedposts
 	case comment.EdgeUser:
 		return m.cleareduser
+	case comment.EdgeParent:
+		return m.clearedparent
+	case comment.EdgeChildren:
+		return m.clearedchildren
 	}
 	return false
 }
@@ -1477,6 +1697,9 @@ func (m *CommentMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *CommentMutation) ClearEdge(name string) error {
 	switch name {
+	case comment.EdgeParent:
+		m.ClearParent()
+		return nil
 	}
 	return fmt.Errorf("unknown Comment unique edge %s", name)
 }
@@ -1490,6 +1713,12 @@ func (m *CommentMutation) ResetEdge(name string) error {
 		return nil
 	case comment.EdgeUser:
 		m.ResetUser()
+		return nil
+	case comment.EdgeParent:
+		m.ResetParent()
+		return nil
+	case comment.EdgeChildren:
+		m.ResetChildren()
 		return nil
 	}
 	return fmt.Errorf("unknown Comment edge %s", name)

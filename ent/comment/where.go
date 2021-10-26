@@ -129,6 +129,13 @@ func DownVotes(v int) predicate.Comment {
 	})
 }
 
+// PostID applies equality check predicate on the "post_id" field. It's identical to PostIDEQ.
+func PostID(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPostID), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Comment {
 	return predicate.Comment(func(s *sql.Selector) {
@@ -592,6 +599,82 @@ func DownVotesLTE(v int) predicate.Comment {
 	})
 }
 
+// PostIDEQ applies the EQ predicate on the "post_id" field.
+func PostIDEQ(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPostID), v))
+	})
+}
+
+// PostIDNEQ applies the NEQ predicate on the "post_id" field.
+func PostIDNEQ(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPostID), v))
+	})
+}
+
+// PostIDIn applies the In predicate on the "post_id" field.
+func PostIDIn(vs ...uint64) predicate.Comment {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Comment(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldPostID), v...))
+	})
+}
+
+// PostIDNotIn applies the NotIn predicate on the "post_id" field.
+func PostIDNotIn(vs ...uint64) predicate.Comment {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Comment(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldPostID), v...))
+	})
+}
+
+// PostIDGT applies the GT predicate on the "post_id" field.
+func PostIDGT(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPostID), v))
+	})
+}
+
+// PostIDGTE applies the GTE predicate on the "post_id" field.
+func PostIDGTE(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPostID), v))
+	})
+}
+
+// PostIDLT applies the LT predicate on the "post_id" field.
+func PostIDLT(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPostID), v))
+	})
+}
+
+// PostIDLTE applies the LTE predicate on the "post_id" field.
+func PostIDLTE(v uint64) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPostID), v))
+	})
+}
+
 // HasPosts applies the HasEdge predicate on the "posts" edge.
 func HasPosts() predicate.Comment {
 	return predicate.Comment(func(s *sql.Selector) {
@@ -639,6 +722,62 @@ func HasUserWith(preds ...predicate.User) predicate.Comment {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(UserInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, UserTable, UserPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParent applies the HasEdge predicate on the "parent" edge.
+func HasParent() predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParentTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParentWith applies the HasEdge predicate on the "parent" edge with a given conditions (other predicates).
+func HasParentWith(preds ...predicate.Comment) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChildren applies the HasEdge predicate on the "children" edge.
+func HasChildren() predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ChildrenTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChildrenWith applies the HasEdge predicate on the "children" edge with a given conditions (other predicates).
+func HasChildrenWith(preds ...predicate.Comment) predicate.Comment {
+	return predicate.Comment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

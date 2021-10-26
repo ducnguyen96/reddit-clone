@@ -50,12 +50,12 @@ func (r *queryResolver) QueryPost(ctx context.Context, input model.QueryPostInpu
 
 	if usr == nil {
 		for i, post := range c {
-			result[i] = utils.EntGoPostToGraphPost(post, false ,false)
+			result[i] = utils.EntGoPostToGraphPost(post, false, false)
 		}
 	} else {
 		for i, post := range c {
 			isUpVoted, isDownVoted := r.UserService.GetUserActionStatusForPost(ctx, post.ID, usr)
-			result[i] = utils.EntGoPostToGraphPost(post, isUpVoted ,isDownVoted)
+			result[i] = utils.EntGoPostToGraphPost(post, isUpVoted, isDownVoted)
 		}
 	}
 

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/ducnguyen96/reddit-clone/graph/repositories/comment_repository"
+	"github.com/ducnguyen96/reddit-clone/graph/services/comment_services"
 	"log"
 	"os"
 
@@ -80,18 +82,21 @@ func main() {
 	userRepo := user_repository.NewUserRepository(readClient, readClient)
 	communityRepo := community_repository.NewCommunityRepository(readClient, readClient)
 	postRepo := post_repository.NewPostRepository(readClient, readClient)
+	commentRepo := comment_repository.NewCommentRepository(readClient, readClient)
 
 	// Services
 	userService := user_services.NewUserService(userRepo)
 	authService := auth_services.NewAuthService()
 	communityService := community_services.NewCommunityService(communityRepo)
 	postService := post_services.NewPostService(postRepo)
+	commentService := comment_services.NewCommentService(commentRepo)
 
 	gr := generated.Config{Resolvers: &graph.Resolver{
 		UserService:       userService,
 		AuthService:      authService,
 		CommunityService: communityService,
 		PostService:      postService,
+		CommentService: commentService,
 	}}
 
 	gr.Directives.Binding = directives.Binding

@@ -1,0 +1,7 @@
+extend type Query {
+    queryComment(input: QueryCommentInput!): CommentPagination!
+}
+
+extend type Mutation {
+    createComment(input: CreateCommentInput!): Comment!
+}

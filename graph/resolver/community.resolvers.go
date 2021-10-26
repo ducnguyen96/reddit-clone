@@ -8,7 +8,6 @@ import (
 	"errors"
 
 	"github.com/ducnguyen96/reddit-clone/ent"
-	"github.com/ducnguyen96/reddit-clone/graph/generated"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
 	"github.com/ducnguyen96/reddit-clone/utils"
 )
@@ -65,12 +64,3 @@ func (r *queryResolver) IsCommunityNameExisted(ctx context.Context, name string)
 	c := r.CommunityService.GetBySlug(ctx, name)
 	return c != nil, nil
 }
-
-// Mutation returns generated.MutationResolver implementation.
-func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
-
-// Query returns generated.QueryResolver implementation.
-func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
-
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
