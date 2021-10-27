@@ -9,7 +9,7 @@ services:
     container_name: apis
     environment:
       - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
-      - DB_HOST=postgres
+      - DB_HOST=172.17.0.2
       - DB_NAME=${DB_NAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
@@ -18,20 +18,18 @@ services:
     ports:
       - "5000:5000"
     restart: always
-    links:
-      - postgres
 
-  postgres:
-    image: postgres:14.0-alpine3.14
-    container_name: postgres
-    restart: always
-    environment:
-      POSTGRES_DB: reddit
-      POSTGRES_USER: veryweirdname
-      POSTGRES_PASSWORD: veryweirdpassword
-      TZ: 'GMT'
-      PGTZ: 'GMT'
-    ports:
-      - '5432:5432'
-    volumes:
-      - db:/var/lib/postgresql/data
+#  postgres:
+#    image: postgres:14.0-alpine3.14
+#    container_name: postgres
+#    restart: always
+#    environment:
+#      POSTGRES_DB: reddit
+#      POSTGRES_USER: veryweirdname
+#      POSTGRES_PASSWORD: veryweirdpassword
+#      TZ: 'GMT'
+#      PGTZ: 'GMT'
+#    ports:
+#      - '5432:5432'
+#    volumes:
+#      - db:/var/lib/postgresql/data
