@@ -9,7 +9,7 @@ services:
     container_name: apis
     environment:
       - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
-      - DB_HOST=172.17.0.2
+      - DB_HOST=172.17.0.1
       - DB_NAME=${DB_NAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
