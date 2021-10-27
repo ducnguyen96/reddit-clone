@@ -26,7 +26,7 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_DB: rdclone
+      POSTGRES_DB: reddit
       POSTGRES_USER: veryweirdname
       POSTGRES_PASSWORD: veryweirdpassword
       TZ: 'GMT'
