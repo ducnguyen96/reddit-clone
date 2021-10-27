@@ -126,6 +126,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		GetComment             func(childComplexity int, id string) int
 		GetCommunity           func(childComplexity int, slug string) int
 		GetPost                func(childComplexity int, slug string) int
 		IsCommunityNameExisted func(childComplexity int, name string) int
@@ -194,6 +195,7 @@ type PostResolver interface {
 }
 type QueryResolver interface {
 	QueryComment(ctx context.Context, input model.QueryCommentInput) (*model.CommentPagination, error)
+	GetComment(ctx context.Context, id string) (*model.Comment, error)
 	GetCommunity(ctx context.Context, slug string) (*model.Community, error)
 	QueryCommunity(ctx context.Context, input model.QueryCommunityInput) (*model.CommunityPagination, error)
 	IsCommunityNameExisted(ctx context.Context, name string) (bool, error)
@@ -618,6 +620,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostPagination.Posts(childComplexity), true
 
+	case "Query.getComment":
+		if e.complexity.Query.GetComment == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetComment(childComplexity, args["id"].(string)), true
+
 	case "Query.getCommunity":
 		if e.complexity.Query.GetCommunity == nil {
 			break
@@ -889,6 +903,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "graph/schema/comment/comment.graphql", Input: `extend type Query {
     queryComment(input: QueryCommentInput!): CommentPagination!
+    getComment(id: ID!): Comment!
 }
 
 extend type Mutation {
@@ -1232,6 +1247,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3297,6 +3327,48 @@ func (ec *executionContext) _Query_queryComment(ctx context.Context, field graph
 	res := resTmp.(*model.CommentPagination)
 	fc.Result = res
 	return ec.marshalNCommentPagination2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐCommentPagination(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetComment(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Comment)
+	fc.Result = res
+	return ec.marshalNComment2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getCommunity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6496,6 +6568,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_queryComment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getComment":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getComment(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

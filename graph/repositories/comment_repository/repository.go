@@ -138,6 +138,10 @@ func (c *CommentRepository) GetOwner(ctx context.Context, comment ent.Comment) *
 	return c.readDB.Comment.QueryUser(&comment).FirstX(ctx)
 }
 
+func (c *CommentRepository) GetComment(ctx context.Context, id uint64) *ent.Comment {
+	return c.readDB.Comment.Query().Where(comment.ID(id)).FirstX(ctx)
+}
+
 func rollback(tx *ent.Tx, err error) error {
 	if rerr := tx.Rollback(); rerr != nil {
 		err = fmt.Errorf("%w: %v", err, rerr)

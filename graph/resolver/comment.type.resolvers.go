@@ -18,9 +18,9 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]*m
 	page := 1
 
 	comments := r.CommentService.Query(ctx, model.QueryCommentInput{
-		PostID: obj.PostID,
-		Limit:  &limit,
-		Page:   &page,
+		PostID:   obj.PostID,
+		Limit:    &limit,
+		Page:     &page,
 		ParentID: &obj.ID,
 	})
 

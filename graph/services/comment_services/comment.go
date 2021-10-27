@@ -30,3 +30,7 @@ func (c *CommentService) GetUserActionStatusForComment(ctx context.Context, comm
 func (c *CommentService) GetOwner(ctx context.Context, comment ent.Comment) *ent.User {
 	return c.repository.GetOwner(ctx, comment)
 }
+
+func (c *CommentService) GetComment(ctx context.Context, id uint64) *ent.Comment {
+	return c.repository.GetComment(ctx, id)
+}

@@ -1,5 +1,6 @@
 extend type Query {
     queryComment(input: QueryCommentInput!): CommentPagination!
+    getComment(id: ID!): Comment!
 }
 
 extend type Mutation {

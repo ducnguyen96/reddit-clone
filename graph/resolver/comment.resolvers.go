@@ -62,6 +62,21 @@ func (r *queryResolver) QueryComment(ctx context.Context, input model.QueryComme
 	}, nil
 }
 
+func (r *queryResolver) GetComment(ctx context.Context, id string) (*model.Comment, error) {
+	usr, _ := r.UserService.GetCurrentUser(ctx)
+	co := r.CommentService.GetComment(ctx, utils.StringToUint64(id))
+
+	if usr == nil {
+		mapped := utils.EntCommentToGraph(co, false, false)
+		mapped.Owner =  utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *co))
+		return mapped, nil
+	}
+	isUpVoted, isDownVoted := r.CommentService.GetUserActionStatusForComment(ctx, co.ID, usr)
+	mapped := utils.EntCommentToGraph(co, isUpVoted, isDownVoted)
+	mapped.Owner = utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *co))
+	return mapped, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
