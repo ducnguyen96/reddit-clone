@@ -9,4 +9,5 @@ input CreatePostInput {
 input QueryPostInput {
     limit: Int @binding(constraint: "numeric")
     page: Int @binding(constraint: "numeric")
+    sort: SortPostEnum
 }

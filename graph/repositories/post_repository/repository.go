@@ -2,6 +2,7 @@ package post_repository
 
 import (
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"fmt"
 	"github.com/ducnguyen96/reddit-clone/ent"
 	"github.com/ducnguyen96/reddit-clone/ent/community"
@@ -71,11 +72,40 @@ func (p *PostRepository) QueryPost(ctx context.Context, input model.QueryPostInp
 		*page = 1
 	}
 	offset := (*page - 1) * *limit
-	return p.readDB.Post.Query().
+
+	qr := p.readDB.Post.Query().
 		Limit(*limit).
-		Offset(offset).
-		Order(ent.Desc(post.FieldUpVotes)).
-		Order(ent.Desc(post.FieldCreatedAt)).
+		Offset(offset)
+
+	if input.Sort != nil {
+		switch *input.Sort {
+		case model.SortPostEnumTop:
+			qr.Order(ent.Desc(post.FieldCreatedAt)).
+				Order(ent.Desc(post.FieldUpVotes))
+			break
+		case model.SortPostEnumHot:
+			qr.Order(func(s *sql.Selector) {
+				s.OrderExpr(sql.ExprFunc(func(b *sql.Builder) {
+					b.WriteString("").Ident(post.FieldUpVotes).WriteOp(sql.OpAdd).Ident(post.FieldDownVotes).WriteString("DESC")
+				}))
+			}).Unique(false).
+				Order(ent.Desc(post.FieldID))
+			break
+		case model.SortPostEnumNew:
+			qr.Order(ent.Desc(post.FieldCreatedAt))
+			break
+		default:
+			qr.Order(func(s *sql.Selector) {
+				s.OrderExpr(sql.ExprFunc(func(b *sql.Builder) {
+					b.WriteString("").Ident(post.FieldUpVotes).WriteOp(sql.OpSub).Ident(post.FieldDownVotes).WriteString("DESC")
+				}))
+			}).
+				Unique(false).
+				Order(ent.Desc(post.FieldID))
+		}
+	}
+
+	return qr.
 		AllX(ctx)
 }
 
@@ -84,12 +114,12 @@ func (p *PostRepository) GetNumberOfComments(ctx context.Context, postId uint64)
 	return p.readDB.Post.QueryComments(po).CountX(ctx)
 }
 
-func (p *PostRepository) GetCommunity(ctx context.Context, postId uint64) (*ent.Community,error) {
+func (p *PostRepository) GetCommunity(ctx context.Context, postId uint64) (*ent.Community, error) {
 	po := p.readDB.Post.Query().Where(post.ID(postId)).FirstX(ctx)
 	return p.readDB.Post.QueryCommunity(po).First(ctx)
 }
 
-func (p *PostRepository) GetOwner(ctx context.Context, postId uint64) (*ent.User,error) {
+func (p *PostRepository) GetOwner(ctx context.Context, postId uint64) (*ent.User, error) {
 	po := p.readDB.Post.Query().Where(post.ID(postId)).FirstX(ctx)
 	return p.readDB.Post.QueryOwner(po).First(ctx)
 }

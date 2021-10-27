@@ -73,7 +73,7 @@ func main() {
 	r.Use(utils.GinContextToContextMiddleware())
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"https://redditclone.ducnguyen96.xyz"}
+	corsConfig.AllowOrigins = []string{"https://redditclone.ducnguyen96.xyz", "http://localhost:3000"}
 	corsConfig.AllowCredentials = true
 	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "Authorization")
 	r.Use(cors.New(corsConfig))

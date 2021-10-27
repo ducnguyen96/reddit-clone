@@ -114,8 +114,9 @@ type QueryCommunityInput struct {
 }
 
 type QueryPostInput struct {
-	Limit *int `json:"limit"`
-	Page  *int `json:"page"`
+	Limit *int          `json:"limit"`
+	Page  *int          `json:"page"`
+	Sort  *SortPostEnum `json:"sort"`
 }
 
 type RegisterBadRequest struct {
@@ -342,6 +343,51 @@ func (e *PostType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e PostType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SortPostEnum string
+
+const (
+	SortPostEnumBest SortPostEnum = "BEST"
+	SortPostEnumHot  SortPostEnum = "HOT"
+	SortPostEnumNew  SortPostEnum = "NEW"
+	SortPostEnumTop  SortPostEnum = "TOP"
+)
+
+var AllSortPostEnum = []SortPostEnum{
+	SortPostEnumBest,
+	SortPostEnumHot,
+	SortPostEnumNew,
+	SortPostEnumTop,
+}
+
+func (e SortPostEnum) IsValid() bool {
+	switch e {
+	case SortPostEnumBest, SortPostEnumHot, SortPostEnumNew, SortPostEnumTop:
+		return true
+	}
+	return false
+}
+
+func (e SortPostEnum) String() string {
+	return string(e)
+}
+
+func (e *SortPostEnum) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SortPostEnum(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SortPostEnum", str)
+	}
+	return nil
+}
+
+func (e SortPostEnum) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

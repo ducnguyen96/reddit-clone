@@ -68,7 +68,7 @@ func (r *queryResolver) GetComment(ctx context.Context, id string) (*model.Comme
 
 	if usr == nil {
 		mapped := utils.EntCommentToGraph(co, false, false)
-		mapped.Owner =  utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *co))
+		mapped.Owner = utils.MapEntGoUserToGraphUser(r.CommentService.GetOwner(ctx, *co))
 		return mapped, nil
 	}
 	isUpVoted, isDownVoted := r.CommentService.GetUserActionStatusForComment(ctx, co.ID, usr)

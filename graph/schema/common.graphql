@@ -2,3 +2,9 @@ type CustomError {
     message: String!
     path: String!
 }
+enum SortPostEnum {
+    BEST
+    HOT
+    NEW
+    TOP
+}

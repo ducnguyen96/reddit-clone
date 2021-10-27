@@ -945,6 +945,12 @@ type CommentPagination {
 	{Name: "graph/schema/common.graphql", Input: `type CustomError {
     message: String!
     path: String!
+}
+enum SortPostEnum {
+    BEST
+    HOT
+    NEW
+    TOP
 }`, BuiltIn: false},
 	{Name: "graph/schema/community/community.graphql", Input: `extend type Query {
     getCommunity(slug: String!): Community!
@@ -1007,6 +1013,7 @@ extend type Mutation {
 input QueryPostInput {
     limit: Int @binding(constraint: "numeric")
     page: Int @binding(constraint: "numeric")
+    sort: SortPostEnum
 }`, BuiltIn: false},
 	{Name: "graph/schema/post/post.type.graphql", Input: `type Post {
     id: ID!
@@ -5814,6 +5821,14 @@ func (ec *executionContext) unmarshalInputQueryPostInput(ctx context.Context, ob
 				err := fmt.Errorf(`unexpected type %T from directive, should be *int`, tmp)
 				return it, graphql.ErrorOnPath(ctx, err)
 			}
+		case "sort":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			it.Sort, err = ec.unmarshalOSortPostEnum2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐSortPostEnum(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -7929,6 +7944,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*v)
+}
+
+func (ec *executionContext) unmarshalOSortPostEnum2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐSortPostEnum(ctx context.Context, v interface{}) (*model.SortPostEnum, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.SortPostEnum)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSortPostEnum2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐSortPostEnum(ctx context.Context, sel ast.SelectionSet, v *model.SortPostEnum) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
