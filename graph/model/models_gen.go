@@ -63,6 +63,11 @@ type CreateCommunityInput struct {
 	IsAdult bool          `json:"isAdult"`
 }
 
+type CreateMediaInput struct {
+	URL  string    `json:"url"`
+	Type MediaType `json:"type"`
+}
+
 type CreatePostInput struct {
 	Title       string           `json:"title"`
 	Content     string           `json:"content"`
@@ -74,6 +79,14 @@ type CreatePostInput struct {
 type CustomError struct {
 	Message string `json:"message"`
 	Path    string `json:"path"`
+}
+
+type Media struct {
+	ID        string    `json:"id"`
+	URL       string    `json:"url"`
+	Type      MediaType `json:"type"`
+	CreatedAt string    `json:"createdAt"`
+	UpdatedAt string    `json:"updatedAt"`
 }
 
 type Post struct {
@@ -300,6 +313,47 @@ func (e *InputContentMode) UnmarshalGQL(v interface{}) error {
 }
 
 func (e InputContentMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MediaType string
+
+const (
+	MediaTypeImage MediaType = "Image"
+	MediaTypeVideo MediaType = "Video"
+)
+
+var AllMediaType = []MediaType{
+	MediaTypeImage,
+	MediaTypeVideo,
+}
+
+func (e MediaType) IsValid() bool {
+	switch e {
+	case MediaTypeImage, MediaTypeVideo:
+		return true
+	}
+	return false
+}
+
+func (e MediaType) String() string {
+	return string(e)
+}
+
+func (e *MediaType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaType", str)
+	}
+	return nil
+}
+
+func (e MediaType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

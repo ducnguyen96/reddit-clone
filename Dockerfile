@@ -18,11 +18,15 @@ RUN go build -o /service .
 ##
 ## Deploy
 ##
-FROM alpine
+FROM jrottenberg/ffmpeg:4.3-alpine
 
 WORKDIR /
 
 COPY --from=build /service ./server
+RUN mkdir -p /media/images
+RUN mkdir -p /media/videos
+RUN mkdir -p /media/videos/raw
+RUN mkdir -p /media/videos/dash
 
 ENV PORT=5000
 EXPOSE 5000

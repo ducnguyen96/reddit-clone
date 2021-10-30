@@ -1,0 +1,4 @@
+input CreateMediaInput {
+    url: String!
+    type: MediaType!
+}

@@ -14,7 +14,7 @@ type Media struct {
 // Fields of the Media.
 func (Media) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("url"),
+		field.String("url").Unique(),
 		field.Enum("type").GoType(enums.MediaType(0)),
 	}
 }

@@ -70,7 +70,7 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "url", Type: field.TypeString},
+		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"Image", "Video"}},
 	}
 	// MediaTable holds the schema information for the "media" table.

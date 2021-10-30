@@ -110,6 +110,24 @@ func GraphPostTypeToEntPostType(t model.PostType) enums.PostType {
 	}
 }
 
+func GraphMediaTypeToEntMediaType(t model.MediaType) enums.MediaType {
+	switch t {
+	case model.MediaTypeVideo:
+		return enums.Video
+	default:
+		return enums.Image
+	}
+}
+
+func EntMediaTypeToGraph(t enums.MediaType) model.MediaType {
+	switch t {
+	case enums.Video:
+		return model.MediaTypeVideo
+	default:
+		return model.MediaTypeImage
+	}
+}
+
 func GraphContentModeToEntContentMode(t model.InputContentMode) enums.InputContentMode {
 	switch t {
 	case model.InputContentModeMarkDown:
@@ -167,5 +185,15 @@ func EntCommentToGraph(comment *ent.Comment, isUpVoted bool, isDownVoted bool) *
 		IsUpVoted:   isUpVoted,
 		IsDownVoted: isDownVoted,
 		PostID: Uint64ToString(comment.PostID),
+	}
+}
+
+func EntMediaToGraph(media *ent.Media) *model.Media {
+	return &model.Media{
+		ID:        Uint64ToString(media.ID),
+		URL:       media.URL,
+		Type:      EntMediaTypeToGraph(media.Type),
+		CreatedAt: media.CreatedAt.String(),
+		UpdatedAt: media.UpdatedAt.String(),
 	}
 }

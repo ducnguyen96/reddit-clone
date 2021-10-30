@@ -1,0 +1,3 @@
+extend type Mutation {
+    createMedia(input: CreateMediaInput!): Media!
+}

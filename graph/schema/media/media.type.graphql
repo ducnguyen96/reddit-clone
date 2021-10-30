@@ -1,0 +1,12 @@
+type Media {
+    id: ID!
+    url: String!
+    type: MediaType!
+    createdAt: String!
+    updatedAt: String!
+}
+
+enum MediaType {
+    Image
+    Video
+}
