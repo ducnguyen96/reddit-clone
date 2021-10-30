@@ -134,6 +134,7 @@ func main() {
 	})
 
 	r.POST("/upload", func(c *gin.Context) {
+		c.Request.Header.Add("access-control-allow-origin", "https://redditclone.ducnguyen96.xyz")
 		var form Form
 		_ = c.ShouldBind(&form)
 
