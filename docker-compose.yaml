@@ -10,17 +10,17 @@ services:
     environment:
       - AUTH_SECRET_KEY=rgrgTRGgz54rgGR465r4g
       - DB_HOST=172.17.0.1
-      - DB_NAME=dn96apis
+      - DB_NAME=redditclone
       - DB_PASSWORD=findnewworld
       - DB_PORT=5432
-      - DB_USER=ducnguyen96
+      - DB_USER=postgres
       - TOKEN_EXPIRES_IN=72
     ports:
       - "5000:5000"
     restart: always
     volumes:
-      - /home/d/Work/Dev/clones/reddit/media:/media
-      - /home/d/Work/Dev/clones/reddit/ffmpeg.sh:/ffmpeg.sh
+      - /home/levinguyen.dl/apps/redditclone/media:/media
+      - /home/levinguyen.dl/apps/redditclone/ffmpeg.sh:/ffmpeg.sh
 
 #  postgres:
 #    image: postgres:14.0-alpine3.14
