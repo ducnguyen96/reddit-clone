@@ -11,7 +11,7 @@ services:
       - AUTH_SECRET_KEY=rgrgTRGgz54rgGR465r4g
       - DB_HOST=172.17.0.1
       - DB_NAME=redditclone
-      - DB_PASSWORD=findnewworld
+      - DB_PASSWORD=findnewworldfindnewworld
       - DB_PORT=5432
       - DB_USER=postgres
       - TOKEN_EXPIRES_IN=72
