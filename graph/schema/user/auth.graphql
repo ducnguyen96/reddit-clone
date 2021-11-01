@@ -1,5 +1,6 @@
 extend type Mutation {
-    register(input: UserRegisterInput!): RegisterResult!
-    login(input: UserLoginInput!): TokenPayloadDto!
-    signOut: Boolean
+  register(input: UserRegisterInput!): RegisterResult!
+  login(input: UserLoginInput!): TokenPayloadDto!
+  signOut: Boolean
+  loginGoogle(gmail: String!): TokenPayloadDto!
 }

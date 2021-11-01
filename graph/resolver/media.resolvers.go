@@ -6,9 +6,9 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/ducnguyen96/reddit-clone/utils"
 
 	"github.com/ducnguyen96/reddit-clone/graph/model"
+	"github.com/ducnguyen96/reddit-clone/utils"
 )
 
 func (r *mutationResolver) CreateMedia(ctx context.Context, input model.CreateMediaInput) (*model.Media, error) {

@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/ducnguyen96/reddit-clone/ent"
 	"github.com/ducnguyen96/reddit-clone/graph/model"
@@ -11,8 +14,6 @@ import (
 	"github.com/ducnguyen96/reddit-clone/graph/services/auth_services"
 	"github.com/ducnguyen96/reddit-clone/utils"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"strings"
 )
 
 type UserService struct {
@@ -101,6 +102,11 @@ func (s *UserService) CreateAction(ctx context.Context, usr ent.User, input mode
 func (s *UserService) GetUserActionStatusForPost(ctx context.Context, postId uint64, usr *ent.User) (bool, bool) {
 	return s.repository.GetUserActionStatusForPost(ctx, postId, usr)
 }
+
+func (s *UserService) FindUserByUsername(ctx context.Context, username string) *ent.User {
+	return s.repository.FindByUserName(ctx, username)
+}
+
 // Rollback calls to tx.Rollback and wraps the given error
 // with the rollback error if occurred.
 func (s *UserService) Rollback(tx *ent.Tx, err error) error {

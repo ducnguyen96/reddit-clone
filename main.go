@@ -3,6 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"os/exec"
+	"strings"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/ducnguyen96/reddit-clone/ent"
@@ -27,12 +34,6 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
-	"log"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"os/exec"
-	"strings"
 )
 
 func init() {
@@ -83,7 +84,7 @@ func main() {
 	r.Use(utils.GinContextToContextMiddleware())
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"https://redditclone.ducnguyen96.xyz"}
+	corsConfig.AllowOrigins = []string{"https://redditclone.ducnguyen96.xyz", "http://localhost:3000"}
 	corsConfig.AllowCredentials = true
 	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "Authorization")
 	r.Use(cors.New(corsConfig))
@@ -104,12 +105,12 @@ func main() {
 	mediaService := media_services.NewMediaService(mediaRepo)
 
 	gr := generated.Config{Resolvers: &graph.Resolver{
-		UserService:       userService,
+		UserService:      userService,
 		AuthService:      authService,
 		CommunityService: communityService,
 		PostService:      postService,
-		CommentService: commentService,
-		MediaService: mediaService,
+		CommentService:   commentService,
+		MediaService:     mediaService,
 	}}
 
 	gr.Directives.Binding = directives.Binding
@@ -134,13 +135,12 @@ func main() {
 	})
 
 	r.POST("/upload", func(c *gin.Context) {
-		c.Request.Header.Add("access-control-allow-origin", "https://redditclone.ducnguyen96.xyz")
 		var form Form
 		_ = c.ShouldBind(&form)
 
 		// Validate inputs
 		file := form.File
-		
+
 		valid, message := utils.ValidateUploadFile(file)
 		if !valid {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -165,10 +165,10 @@ func main() {
 			path = "/videos/raw/" + unique + "-" + file.Filename
 		}
 
-		_ = c.SaveUploadedFile(file, "/media" + path)
+		_ = c.SaveUploadedFile(file, "/media"+path)
 
 		c.JSON(http.StatusOK, gin.H{
-			"url": path,
+			"url":          path,
 			"content-type": contentType,
 		})
 	})

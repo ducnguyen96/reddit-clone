@@ -2,12 +2,13 @@ package auth_services
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/ducnguyen96/reddit-clone/graph/model"
-	_ "github.com/joho/godotenv/autoload"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/ducnguyen96/reddit-clone/graph/model"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 var MySigningKey = []byte(os.Getenv("AUTH_SECRET_KEY"))
@@ -17,8 +18,7 @@ type MyCustomClaims struct {
 	jwt.StandardClaims
 }
 
-
-type AuthService struct {}
+type AuthService struct{}
 
 func NewAuthService() *AuthService {
 	return &AuthService{}
@@ -29,10 +29,10 @@ func (a *AuthService) CreateToken(userId uint64) (*model.TokenPayloadDto, error)
 	// Tham khảo https://pkg.go.dev/github.com/golang-jwt/jwt#example-NewWithClaims-CustomClaimsType
 	expiresIn, _ := strconv.Atoi(os.Getenv("TOKEN_EXPIRES_IN"))
 	claims := MyCustomClaims{
-	userId,
+		userId,
 		jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
-			ExpiresAt: time.Now().Add(time.Hour*time.Duration(expiresIn)).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * time.Duration(expiresIn)).Unix(),
 			Issuer:    "test",
 		},
 	}
@@ -44,7 +44,7 @@ func (a *AuthService) CreateToken(userId uint64) (*model.TokenPayloadDto, error)
 		return nil, fmt.Errorf("failed signing token: %w", err)
 	}
 
-		return &model.TokenPayloadDto{
+	return &model.TokenPayloadDto{
 		ExpiresIn:   &expiresIn,
 		AccessToken: &ss,
 	}, nil

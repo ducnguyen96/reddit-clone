@@ -105,6 +105,7 @@ type ComplexityRoot struct {
 		CreateMedia      func(childComplexity int, input model.CreateMediaInput) int
 		CreatePost       func(childComplexity int, input model.CreatePostInput) int
 		Login            func(childComplexity int, input model.UserLoginInput) int
+		LoginGoogle      func(childComplexity int, gmail string) int
 		Register         func(childComplexity int, input model.UserRegisterInput) int
 		SignOut          func(childComplexity int) int
 		UserCreateAction func(childComplexity int, input model.UserCreateActionInput) int
@@ -196,6 +197,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.UserRegisterInput) (model.RegisterResult, error)
 	Login(ctx context.Context, input model.UserLoginInput) (*model.TokenPayloadDto, error)
 	SignOut(ctx context.Context) (*bool, error)
+	LoginGoogle(ctx context.Context, gmail string) (*model.TokenPayloadDto, error)
 	UserCreateAction(ctx context.Context, input model.UserCreateActionInput) (*model.UserAction, error)
 }
 type PostResolver interface {
@@ -519,6 +521,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.UserLoginInput)), true
+
+	case "Mutation.loginGoogle":
+		if e.complexity.Mutation.LoginGoogle == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_loginGoogle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LoginGoogle(childComplexity, args["gmail"].(string)), true
 
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
@@ -1126,10 +1140,12 @@ enum InputContentMode {
     TextEditor
 }`, BuiltIn: false},
 	{Name: "graph/schema/user/auth.graphql", Input: `extend type Mutation {
-    register(input: UserRegisterInput!): RegisterResult!
-    login(input: UserLoginInput!): TokenPayloadDto!
-    signOut: Boolean
-}`, BuiltIn: false},
+  register(input: UserRegisterInput!): RegisterResult!
+  login(input: UserLoginInput!): TokenPayloadDto!
+  signOut: Boolean
+  loginGoogle(gmail: String!): TokenPayloadDto!
+}
+`, BuiltIn: false},
 	{Name: "graph/schema/user/auth.type.graphql", Input: `type TokenPayloadDto {
     expiresIn: Int
     accessToken: String
@@ -1285,6 +1301,21 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_loginGoogle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["gmail"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gmail"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gmail"] = arg0
 	return args, nil
 }
 
@@ -2928,6 +2959,48 @@ func (ec *executionContext) _Mutation_signOut(ctx context.Context, field graphql
 	res := resTmp.(*bool)
 	fc.Result = res
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_loginGoogle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_loginGoogle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LoginGoogle(rctx, args["gmail"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TokenPayloadDto)
+	fc.Result = res
+	return ec.marshalNTokenPayloadDto2ᚖgithubᚗcomᚋducnguyen96ᚋredditᚑcloneᚋgraphᚋmodelᚐTokenPayloadDto(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_userCreateAction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6773,6 +6846,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "signOut":
 			out.Values[i] = ec._Mutation_signOut(ctx, field)
+		case "loginGoogle":
+			out.Values[i] = ec._Mutation_loginGoogle(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "userCreateAction":
 			out.Values[i] = ec._Mutation_userCreateAction(ctx, field)
 			if out.Values[i] == graphql.Null {
