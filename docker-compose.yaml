@@ -21,8 +21,8 @@ services:
     volumes:
       - /home/levinguyen.dl/apps/redditclone/media:/media
       - /home/levinguyen.dl/apps/redditclone/ffmpeg.sh:/ffmpeg.sh
-        # - /home/d/Work/Dev/clones/reddit/media:/media
-        # - /home/d/Work/Dev/clones/reddit/ffmpeg.sh:/ffmpeg.sh
+      # - /home/d/Work/Dev/clones/reddit/media:/media
+      # - /home/d/Work/Dev/clones/reddit/ffmpeg.sh:/ffmpeg.sh
 #  postgres:
 #    image: postgres:14.0-alpine3.14
 #    container_name: postgres

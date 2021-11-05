@@ -156,13 +156,16 @@ func main() {
 		isVideo := strings.HasPrefix(contentType, "video")
 
 		unique := uuid.New().String()
+
+		fn := strings.ReplaceAll(file.Filename, " ", "_")
+
 		var path string
 		if isImage {
-			path = "/images/" + unique + "-" + file.Filename
+			path = "/images/" + unique + "-" + fn
 		}
 
 		if isVideo {
-			path = "/videos/raw/" + unique + "-" + file.Filename
+			path = "/videos/raw/" + unique + "-" + fn
 		}
 
 		_ = c.SaveUploadedFile(file, "/media"+path)
