@@ -4,36 +4,46 @@ version: "3"
 #  db: # mount it internally instead of a folder. it avoids file lock problems
 
 services:
-  app:
-    image: ${DOCKER_HUB_USERNAME}/reddit-clone-apis:latest
-    container_name: apis
+  api:
+    image: ducnguyen96/reddit-clone-apis:latest
+    container_name: reddit-apis
     environment:
       - AUTH_SECRET_KEY=rgrgTRGgz54rgGR465r4g
-      - DB_HOST=172.17.0.1
+      - DB_HOST=postgres
       - DB_NAME=redditclone
-      - DB_PASSWORD=findnewworldfindnewworld
+      - DB_USER=veryweirdname
+      - DB_PASSWORD=veryweirdpassword
       - DB_PORT=5432
-      - DB_USER=postgres
       - TOKEN_EXPIRES_IN=72
     ports:
       - "5000:5000"
     restart: always
-    volumes:
-      - /home/levinguyen.dl/apps/redditclone/media:/media
-      - /home/levinguyen.dl/apps/redditclone/ffmpeg.sh:/ffmpeg.sh
+    depends_on:
+      - postgres
+    networks:
+      - reddit-network
+    # volumes:
+      # - /home/levinguyen.dl/apps/redditclone/media:/media
+      # - /home/levinguyen.dl/apps/redditclone/ffmpeg.sh:/ffmpeg.sh
       # - /home/d/Work/Dev/clones/reddit/media:/media
       # - /home/d/Work/Dev/clones/reddit/ffmpeg.sh:/ffmpeg.sh
-#  postgres:
-#    image: postgres:14.0-alpine3.14
-#    container_name: postgres
-#    restart: always
-#    environment:
-#      POSTGRES_DB: reddit
-#      POSTGRES_USER: veryweirdname
-#      POSTGRES_PASSWORD: veryweirdpassword
-#      TZ: 'GMT'
-#      PGTZ: 'GMT'
-#    ports:
-#      - '5432:5432'
-#    volumes:
-#      - db:/var/lib/postgresql/data
+  postgres:
+    image: postgres:14.0-alpine3.14
+    container_name: reddit-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: redditclone
+      POSTGRES_USER: veryweirdname
+      POSTGRES_PASSWORD: veryweirdpassword
+      TZ: 'GMT'
+      PGTZ: 'GMT'
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./database/:/var/lib/postgresql/data
+    networks:
+      - reddit-network
+networks:
+  reddit-network:
+    external:
+      name: reddit-network
