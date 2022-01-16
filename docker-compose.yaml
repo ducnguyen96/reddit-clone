@@ -22,11 +22,9 @@ services:
       - postgres
     networks:
       - reddit-network
-    # volumes:
-      # - /home/levinguyen.dl/apps/redditclone/media:/media
-      # - /home/levinguyen.dl/apps/redditclone/ffmpeg.sh:/ffmpeg.sh
-      # - /home/d/Work/Dev/clones/reddit/media:/media
-      # - /home/d/Work/Dev/clones/reddit/ffmpeg.sh:/ffmpeg.sh
+    volumes:
+      - /home/ducng948/reddit-clone/media:/media
+      - /home/ducng948/reddit-clone/server/ffmpeg.sh:/ffmpeg.sh
   postgres:
     image: postgres:14.0-alpine3.14
     container_name: reddit-postgres
